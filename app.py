@@ -13,6 +13,7 @@ from routes.solicitacoes import solicitacoes_bp
 from routes.notificacoes import notificacoes_bp
 from routes.chat import chat_bp
 from routes.main import main_bp
+from routes.resumos import resumos_bp
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -31,13 +32,14 @@ def create_app():
 
     # Registrar blueprints
     app.register_blueprint(main_bp)  # Registrar primeiro para ter prioridade na rota '/'
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(chat_bp, url_prefix='/chat')
     app.register_blueprint(cargas_bp, url_prefix='/cargas')
     app.register_blueprint(solicitacoes_bp, url_prefix='/solicitacoes')
     app.register_blueprint(usuarios_bp, url_prefix='/usuarios')
     app.register_blueprint(dev_bp, url_prefix='/dev')
     app.register_blueprint(notificacoes_bp, url_prefix='/notificacoes')
+    app.register_blueprint(resumos_bp, url_prefix='/resumos')
 
     return app
 

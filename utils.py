@@ -58,3 +58,21 @@ def permissao_diretoria(f):
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)
     return decorated_function
+
+def permissao_desenvolvedor(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.tipo != 'admin':
+            flash('Acesso não autorizado', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def permissao_resumos(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.tipo not in ['gerente', 'diretoria', 'transportadora', 'financeiro']:
+            flash('Acesso não autorizado', 'error')
+            return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return decorated_function

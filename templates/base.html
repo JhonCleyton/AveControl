@@ -96,7 +96,15 @@
                         {% if current_user.tipo == 'gerente' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('usuarios.index') }}">
-                                <i class="fas fa-users"></i> Gerenciar Usuários
+                                <i class="fas fa-users"></i> Usuários
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.tipo in ['gerente', 'diretoria', 'transportadora', 'financeiro'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('resumos.index') }}">
+                                <i class="fas fa-file-invoice-dollar"></i> Resumos
                             </a>
                         </li>
                         {% endif %}

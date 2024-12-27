@@ -1,26 +1,22 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
-from models import db, ConfiguracaoFormulario
+from models import db, ConfiguracaoFormulario, Carga
 from datetime import datetime
+from utils import permissao_desenvolvedor
 
 dev_bp = Blueprint('dev', __name__)
 
 @dev_bp.route('/configuracoes')
 @login_required
+@permissao_desenvolvedor
 def configuracoes():
-    if current_user.tipo != 'admin':
-        flash('Acesso não autorizado', 'error')
-        return redirect(url_for('index'))
-    
     configuracoes = ConfiguracaoFormulario.query.order_by(ConfiguracaoFormulario.ordem).all()
     return render_template('dev/configuracoes.html', configuracoes=configuracoes)
 
 @dev_bp.route('/configuracoes/salvar', methods=['POST'])
 @login_required
+@permissao_desenvolvedor
 def salvar_configuracoes():
-    if current_user.tipo != 'admin':
-        return jsonify({'success': False, 'message': 'Acesso não autorizado'}), 403
-    
     try:
         data = request.json
         configuracoes = data.get('configuracoes', [])
@@ -48,10 +44,8 @@ def salvar_configuracoes():
 
 @dev_bp.route('/configuracoes/campo', methods=['POST'])
 @login_required
+@permissao_desenvolvedor
 def adicionar_campo():
-    if current_user.tipo != 'admin':
-        return jsonify({'success': False, 'message': 'Acesso não autorizado'}), 403
-    
     try:
         data = request.json
         ultima_config = ConfiguracaoFormulario.query.order_by(ConfiguracaoFormulario.ordem.desc()).first()
@@ -86,10 +80,8 @@ def adicionar_campo():
 
 @dev_bp.route('/configuracoes/campo/<int:id>', methods=['DELETE'])
 @login_required
+@permissao_desenvolvedor
 def remover_campo(id):
-    if current_user.tipo != 'admin':
-        return jsonify({'success': False, 'message': 'Acesso não autorizado'}), 403
-    
     try:
         campo = ConfiguracaoFormulario.query.get_or_404(id)
         db.session.delete(campo)
@@ -107,12 +99,23 @@ def remover_campo(id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@dev_bp.route('/atualizar_status', methods=['POST'])
+@login_required
+@permissao_desenvolvedor
+def atualizar_status():
+    try:
+        if Carga.atualizar_status_cargas():
+            flash('Status das cargas atualizado com sucesso!', 'success')
+        else:
+            flash('Erro ao atualizar status das cargas.', 'danger')
+    except Exception as e:
+        flash(f'Erro: {str(e)}', 'danger')
+    
+    return redirect(url_for('dev.configuracoes'))
+
 @dev_bp.route('/formularios')
 @login_required
+@permissao_desenvolvedor
 def formularios():
-    if current_user.tipo != 'admin':
-        flash('Acesso não autorizado', 'error')
-        return redirect(url_for('index'))
-    
     campos = ConfiguracaoFormulario.query.order_by(ConfiguracaoFormulario.ordem).all()
     return render_template('dev/formularios.html', campos=campos)

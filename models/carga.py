@@ -1,5 +1,6 @@
 from extensions import db
 from datetime import datetime
+from pytz import UTC
 
 class Carga(db.Model):
     __tablename__ = 'cargas'
@@ -22,6 +23,7 @@ class Carga(db.Model):
     valor_km = db.Column(db.Float, default=0)
     valor_frete = db.Column(db.Float, default=0)
     status_frete = db.Column(db.String(50))
+    status = db.Column(db.String(50), default='pendente')  # pendente, em_andamento, concluida, cancelada
     caixas_vazias = db.Column(db.Integer, default=0)
     quantidade_caixas = db.Column(db.Integer, default=0)
     produtor = db.Column(db.String(100))
@@ -41,7 +43,6 @@ class Carga(db.Model):
     abastecimento_posto = db.Column(db.Float, default=0)
     adiantamento = db.Column(db.Float, default=0)
     valor_pagar = db.Column(db.Float, default=0)
-    status = db.Column(db.String(20), default='incompleto')
     nota_aprovada = db.Column(db.Boolean, default=False)
     aprovado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     aprovado_em = db.Column(db.DateTime)
@@ -51,8 +52,8 @@ class Carga(db.Model):
     assinatura_autorizacao = db.Column(db.String(500))
     
     # Metadados
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
-    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    criado_em = db.Column(db.DateTime, default=datetime.now(UTC))
+    atualizado_em = db.Column(db.DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
     criado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     atualizado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     

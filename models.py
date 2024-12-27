@@ -31,6 +31,12 @@ class Usuario(UserMixin, db.Model):
 class Carga(db.Model):
     __tablename__ = 'cargas'
     
+    # Constantes para status
+    STATUS_PENDENTE = 'pendente'
+    STATUS_EM_ANDAMENTO = 'em_andamento'
+    STATUS_CONCLUIDA = 'concluida'
+    STATUS_CANCELADA = 'cancelada'
+
     id = db.Column(db.Integer, primary_key=True)
     numero_carga = db.Column(db.String(20), unique=True, nullable=False)
     tipo_ave = db.Column(db.String(50), nullable=False)
@@ -73,7 +79,7 @@ class Carga(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.now(UTC))
     atualizado_em = db.Column(db.DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
     criado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    status = db.Column(db.String(20), default='incompleta')
+    status = db.Column(db.String(20), default=STATUS_PENDENTE)
     
     # Campos de aprovação e autorização
     nota_aprovada = db.Column(db.Boolean, default=False)
@@ -103,6 +109,26 @@ class Carga(db.Model):
     autorizado_por = db.relationship('Usuario', foreign_keys=[autorizado_por_id])
     solicitado_por = db.relationship('Usuario', foreign_keys=[solicitado_por_id])
     solicitado_exclusao_por = db.relationship('Usuario', foreign_keys=[solicitado_exclusao_por_id])
+
+    @classmethod
+    def atualizar_status_cargas(cls):
+        try:
+            cargas = cls.query.all()
+            for carga in cargas:
+                # Se a carga estiver incompleta, marcar como pendente
+                if carga.status == 'incompleta':
+                    carga.status = cls.STATUS_PENDENTE
+                # Se a carga estiver completa, marcar como concluída
+                elif carga.status == 'completa':
+                    carga.status = cls.STATUS_CONCLUIDA
+            
+            db.session.commit()
+            print("Status das cargas atualizado com sucesso!")
+            return True
+        except Exception as e:
+            print(f"Erro ao atualizar status das cargas: {str(e)}")
+            db.session.rollback()
+            return False
 
 class SubCarga(db.Model):
     id = db.Column(db.Integer, primary_key=True)
