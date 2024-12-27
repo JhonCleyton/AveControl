@@ -183,30 +183,29 @@ function calcularTotal(numero) {
 function buscarCarga() {
     const numeroCarga = document.getElementById('numero_carga').value;
     
-    fetch(`/cargas/buscar_carga/${numeroCarga}`)
+    fetch(`/cargas/buscar_carga_fechamento/${numeroCarga}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                cargaAtual = data.carga;
+                const cargaData = data.data.carga;
+                const fechamentoData = data.data.fechamento;
                 
-                // Exibir dados da carga
-                document.getElementById('display_numero_carga').textContent = cargaAtual.numero_carga;
-                document.getElementById('display_motorista').textContent = cargaAtual.motorista;
-                document.getElementById('display_data').textContent = cargaAtual.data_abate;
+                document.getElementById('display_numero_carga').textContent = cargaData.numero_carga;
+                document.getElementById('display_motorista').textContent = cargaData.motorista || cargaData.motorista_outro;
                 
-                // Mostrar formulário e dados
+                cargaAtual = cargaData;
+                
                 document.getElementById('dados_carga').style.display = 'block';
                 document.getElementById('form_fechamento').style.display = 'block';
                 
-                // Se já existe fechamento, preencher os dados
-                if (cargaAtual.fechamento) {
-                    preencherFechamento(cargaAtual.fechamento);
+                if (fechamentoData) {
+                    preencherFechamento(fechamentoData);
                 }
             } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro',
-                    text: 'Carga não encontrada!'
+                    text: data.message || 'Carga não encontrada!'
                 });
             }
         })
@@ -224,7 +223,6 @@ function preencherFechamento(fechamento) {
     document.getElementById('tratativas').value = fechamento.tratativas;
     toggleTratativas();
     
-    // Preencher primeira tratativa
     document.getElementById('tipo_fechamento_1').value = fechamento.tipo_fechamento_1;
     document.getElementById('quantidade_1').value = fechamento.quantidade_1;
     document.getElementById('valor_unitario_1').value = fechamento.valor_unitario_1;
@@ -232,7 +230,6 @@ function preencherFechamento(fechamento) {
     document.getElementById('observacoes_1').value = fechamento.observacoes_1;
     calcularTotal(1);
     
-    // Se houver segunda tratativa, preencher
     if (fechamento.tratativas === '2') {
         document.getElementById('tipo_fechamento_2').value = fechamento.tipo_fechamento_2;
         document.getElementById('quantidade_2').value = fechamento.quantidade_2;

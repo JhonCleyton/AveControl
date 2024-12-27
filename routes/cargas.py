@@ -129,7 +129,7 @@ def criar_carga():
         carga = Carga(**carga_data)
         carga.criado_por_id = current_user.id
         carga.atualizado_por_id = current_user.id
-        carga.atualizar_status()  # Atualiza o status da carga
+        carga.atualizar_status(Carga.STATUS_PENDENTE)  # Define o status inicial como pendente
         
         db.session.add(carga)
         db.session.commit()
@@ -173,6 +173,64 @@ def criar_carga():
 @login_required
 def fechamento_carga():
     return render_template('cargas/fechamento_carga.html')
+
+@cargas_bp.route('/buscar_carga_fechamento/<numero_carga>')
+@login_required
+@permissao_fechamento
+def buscar_carga_fechamento(numero_carga):
+    try:
+        carga = Carga.query.filter_by(numero_carga=numero_carga).first()
+        if not carga:
+            return jsonify({'success': False, 'message': 'Carga não encontrada'})
+
+        # Verificar se a carga já tem fechamento
+        fechamento_data = None
+        if carga.fechamento:
+            fechamento_data = {
+                'tratativas': carga.fechamento.tratativas,
+                'tipo_fechamento_1': carga.fechamento.tipo_fechamento_1,
+                'quantidade_1': carga.fechamento.quantidade_1,
+                'valor_unitario_1': carga.fechamento.valor_unitario_1,
+                'descontos_1': carga.fechamento.descontos_1,
+                'valor_total_1': carga.fechamento.valor_total_1,
+                'observacoes_1': carga.fechamento.observacoes_1
+            }
+            if carga.fechamento.tratativas == '2':
+                fechamento_data.update({
+                    'tipo_fechamento_2': carga.fechamento.tipo_fechamento_2,
+                    'quantidade_2': carga.fechamento.quantidade_2,
+                    'valor_unitario_2': carga.fechamento.valor_unitario_2,
+                    'descontos_2': carga.fechamento.descontos_2,
+                    'valor_total_2': carga.fechamento.valor_total_2,
+                    'observacoes_2': carga.fechamento.observacoes_2
+                })
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'carga': {
+                    'numero_carga': carga.numero_carga,
+                    'tipo_ave': carga.tipo_ave,
+                    'quantidade_cargas': carga.quantidade_cargas,
+                    'motorista': carga.motorista,
+                    'motorista_outro': carga.motorista_outro,
+                    'transportadora': carga.transportadora,
+                    'placa_veiculo': carga.placa_veiculo,
+                    'km_rodados': carga.km_rodados,
+                    'valor_km': carga.valor_km,
+                    'valor_frete': carga.valor_frete,
+                    'pedagios': carga.pedagios,
+                    'outras_despesas': carga.outras_despesas,
+                    'abastecimento_empresa': carga.abastecimento_empresa,
+                    'abastecimento_posto': carga.abastecimento_posto,
+                    'adiantamento': carga.adiantamento,
+                    'valor_pagar': carga.valor_pagar
+                },
+                'fechamento': fechamento_data
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @cargas_bp.route('/salvar_fechamento', methods=['POST'])
 @login_required

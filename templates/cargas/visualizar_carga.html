@@ -376,6 +376,156 @@
         }
     </script>
 
+    <style>
+        /* Estilos normais */
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.25rem;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        /* Estilos específicos para impressão */
+        @media print {
+            @page {
+                size: portrait;
+                margin: 1cm;
+            }
+
+            /* Esconder elementos desnecessários */
+            .navbar, 
+            .footer,
+            .btn,
+            .no-print,
+            .nav,
+            .alert,
+            form,
+            button,
+            .card-header h5 button {
+                display: none !important;
+            }
+
+            /* Ajustes gerais */
+            body {
+                font-size: 12px;
+                line-height: 1.3;
+                background: none;
+                color: black;
+            }
+
+            .container {
+                width: 100% !important;
+                max-width: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            /* Ajustes do card principal */
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-inside: avoid !important;
+            }
+
+            .card-body {
+                padding: 0.5cm !important;
+            }
+
+            /* Ajustes das informações */
+            .row {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                margin: 0 -5px !important;
+            }
+
+            .col-md-6, .col-md-4, .col-md-3 {
+                padding: 0 5px !important;
+                margin-bottom: 5px !important;
+                page-break-inside: avoid !important;
+            }
+
+            .col-md-6 {
+                width: 50% !important;
+            }
+
+            .col-md-4 {
+                width: 33.33% !important;
+            }
+
+            .col-md-3 {
+                width: 25% !important;
+            }
+
+            /* Ajustes do texto */
+            h1, h2, h3, h4, h5, h6 {
+                margin: 0 0 5px 0 !important;
+                color: black !important;
+            }
+
+            p {
+                margin: 0 0 3px 0 !important;
+            }
+
+            /* Ajustes das labels e valores */
+            .info-label {
+                font-weight: bold;
+                color: black !important;
+                margin-right: 5px;
+            }
+
+            /* Status badge */
+            .status-badge {
+                border: 1px solid black !important;
+                background: none !important;
+                color: black !important;
+                padding: 2px 5px !important;
+            }
+
+            /* Remover backgrounds e cores */
+            * {
+                background: none !important;
+                color: black !important;
+                text-shadow: none !important;
+            }
+
+            /* Ajustes do collapse */
+            .collapse {
+                display: block !important;
+                height: auto !important;
+            }
+
+            .card-header {
+                background: none !important;
+                border-bottom: 1px solid black !important;
+                padding: 5px 0 !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Ajustes da tabela */
+            table {
+                width: 100% !important;
+                margin-bottom: 10px !important;
+                border-collapse: collapse !important;
+            }
+
+            th, td {
+                padding: 4px !important;
+                border: 1px solid black !important;
+                text-align: left !important;
+            }
+
+            th {
+                font-weight: bold !important;
+                background: none !important;
+            }
+        }
+    </style>
+
     {% block extra_js %}
     <script>
     function aprovarNota(id) {

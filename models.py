@@ -99,6 +99,19 @@ class Carga(db.Model):
     motivo_exclusao = db.Column(db.Text)
     solicitado_exclusao_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     data_solicitacao_exclusao = db.Column(db.DateTime)
+
+    def atualizar_status(self, novo_status):
+        """
+        Atualiza o status da carga e registra a data de atualização.
+        
+        Args:
+            novo_status (str): Novo status da carga (deve ser um dos status definidos nas constantes)
+        """
+        if novo_status in [self.STATUS_PENDENTE, self.STATUS_EM_ANDAMENTO, self.STATUS_CONCLUIDA, self.STATUS_CANCELADA]:
+            self.status = novo_status
+            self.atualizado_em = datetime.now(UTC)
+            return True
+        return False
     
     # Relacionamentos
     subcargas = db.relationship('SubCarga', backref='carga_principal', lazy=True)

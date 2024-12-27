@@ -5,6 +5,12 @@ from pytz import UTC
 class Carga(db.Model):
     __tablename__ = 'cargas'
     
+    # Constantes para status
+    STATUS_PENDENTE = 'pendente'
+    STATUS_EM_ANDAMENTO = 'em_andamento'
+    STATUS_CONCLUIDA = 'concluida'
+    STATUS_CANCELADA = 'cancelada'
+    
     id = db.Column(db.Integer, primary_key=True)
     numero_carga = db.Column(db.String(20), unique=True, nullable=False)
     tipo_ave = db.Column(db.String(50), nullable=False)
@@ -65,6 +71,19 @@ class Carga(db.Model):
     subcargas = db.relationship('SubCarga', backref='carga', lazy=True)
     producoes = db.relationship('Producao', backref='carga', lazy=True)
     fechamento = db.relationship('Fechamento', back_populates='carga', uselist=False)
+
+    def atualizar_status(self, novo_status):
+        """
+        Atualiza o status da carga e registra a data de atualização.
+        
+        Args:
+            novo_status (str): Novo status da carga (deve ser um dos status definidos nas constantes)
+        """
+        if novo_status in [self.STATUS_PENDENTE, self.STATUS_EM_ANDAMENTO, self.STATUS_CONCLUIDA, self.STATUS_CANCELADA]:
+            self.status = novo_status
+            self.atualizado_em = datetime.now(UTC)
+            return True
+        return False
 
 class SubCarga(db.Model):
     id = db.Column(db.Integer, primary_key=True)

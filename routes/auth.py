@@ -46,7 +46,7 @@ def login():
 def logout():
     logout_user()
     flash('Você foi desconectado com sucesso.', 'success')
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('main.index'))
 
 @auth_bp.route('/usuarios')
 @login_required

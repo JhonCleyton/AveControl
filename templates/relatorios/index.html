@@ -2,9 +2,14 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">
-        <i class="fas fa-chart-line"></i> Relatórios
-    </h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-4">
+            <i class="fas fa-chart-line"></i> Relatórios
+        </h2>
+        <button onclick="imprimirRelatorio()" class="btn btn-primary">
+            <i class="fas fa-print"></i> Imprimir Relatório
+        </button>
+    </div>
 
     <!-- Filtros -->
     <div class="card mb-4">
@@ -150,6 +155,7 @@
 </div>
 
 <style>
+/* Estilos normais */
 .card-3d {
     background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
     border: none;
@@ -180,7 +186,159 @@
 .text-muted {
     font-size: 0.9rem;
 }
+
+/* Estilos específicos para impressão */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 0.3cm;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 5px !important;
+        margin: 0 !important;
+    }
+
+    /* Ocultar elementos desnecessários */
+    .navbar, .footer, form, .btn, .no-print {
+        display: none !important;
+    }
+
+    /* Ajustar cabeçalho do relatório */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 5px;
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .print-header h1 {
+        font-size: 16px !important;
+        margin: 0 !important;
+    }
+
+    .print-header p {
+        font-size: 10px !important;
+        margin: 2px 0 !important;
+    }
+
+    /* Título da página */
+    h2 {
+        font-size: 14px !important;
+        margin: 5px 0 !important;
+        text-align: center;
+    }
+
+    /* Cards */
+    .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        margin: 0 -2px !important;
+    }
+
+    .col-md-4 {
+        width: 16.66% !important; /* 6 cards por linha */
+        padding: 2px !important;
+        float: left !important;
+    }
+
+    .card {
+        margin: 0 !important;
+        border: 1px solid #ddd !important;
+        break-inside: avoid !important;
+    }
+
+    .card-3d {
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    .card-body {
+        padding: 5px !important;
+    }
+
+    .card-title {
+        font-size: 10px !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .display-4 {
+        font-size: 12px !important;
+        margin: 2px 0 !important;
+        font-weight: bold !important;
+    }
+
+    .text-muted {
+        font-size: 8px !important;
+        margin: 0 !important;
+    }
+
+    /* Gráficos */
+    .row:last-child {
+        margin-top: 5px !important;
+        page-break-before: avoid !important;
+    }
+
+    .col-md-8 {
+        width: 60% !important;
+        padding: 2px !important;
+    }
+
+    .col-md-4:last-child {
+        width: 40% !important;
+        padding: 2px !important;
+    }
+
+    .card-header {
+        padding: 3px !important;
+    }
+
+    .card-header h5 {
+        font-size: 10px !important;
+        margin: 0 !important;
+    }
+
+    canvas {
+        height: 120px !important;
+        width: 100% !important;
+    }
+
+    /* Ajustes gerais */
+    * {
+        color: black !important;
+        text-shadow: none !important;
+        background: transparent !important;
+    }
+
+    .fa, .fas {
+        display: none !important;
+    }
+}
 </style>
+
+<!-- Cabeçalho visível apenas na impressão -->
+<div class="print-header" style="display: none;">
+    <h1>Relatório de Transportes</h1>
+    <p>
+        Período: {{ resumo.data_inicial if resumo.data_inicial else 'Início' }} até {{ resumo.data_final if resumo.data_final else 'Atual' }}
+        {% if resumo.transportadora_selecionada %} | Transportadora: {{ resumo.transportadora_selecionada }}{% endif %}
+        | Gerado em: {{ now.strftime('%d/%m/%Y %H:%M') }}
+    </p>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -248,5 +406,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function imprimirRelatorio() {
+    // Pegar valores dos filtros
+    const dataInicial = document.getElementById('data_inicial').value;
+    const dataFinal = document.getElementById('data_final').value;
+    const transportadora = document.getElementById('transportadora').value;
+    
+    // Construir URL com parâmetros
+    let url = '/relatorios/imprimir?';
+    if (dataInicial) url += `data_inicial=${dataInicial}&`;
+    if (dataFinal) url += `data_final=${dataFinal}&`;
+    if (transportadora) url += `transportadora=${encodeURIComponent(transportadora)}`;
+    
+    // Abrir em nova janela
+    window.open(url, '_blank');
+}
 </script>
 {% endblock %}
