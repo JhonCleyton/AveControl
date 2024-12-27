@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="fas fa-chart-line"></i> Relatórios
+    </h2>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                {% if current_user.tipo != 'transportadora' %}
+                <div class="col-md-3">
+                    <label for="transportadora" class="form-label">Transportadora:</label>
+                    <select name="transportadora" id="transportadora" class="form-select">
+                        <option value="">Todas as Transportadoras</option>
+                        {% for transp in resumo.transportadoras %}
+                        <option value="{{ transp }}" {% if transp == resumo.transportadora_selecionada %}selected{% endif %}>
+                            {{ transp }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-md-3">
+                    <label for="data_inicial" class="form-label">Data Inicial:</label>
+                    <input type="date" class="form-control" id="data_inicial" name="data_inicial" value="{{ resumo.data_inicial }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_final" class="form-label">Data Final:</label>
+                    <input type="date" class="form-control" id="data_final" name="data_final" value="{{ resumo.data_final }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="row mb-4">
+        <!-- Card 1 - Quantidade de Cargas -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary mb-3">
+                        <i class="fas fa-truck"></i> Total de Cargas
+                    </h5>
+                    <h2 class="display-4">{{ resumo.total_cargas }}</h2>
+                    <p class="text-muted">no período selecionado</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 - Abastecimento Médio -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success mb-3">
+                        <i class="fas fa-gas-pump"></i> Abastecimento Médio
+                    </h5>
+                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_medio) }}</h2>
+                    <p class="text-muted">por carga</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3 - Abastecimento Total -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger mb-3">
+                        <i class="fas fa-gas-pump"></i> Abastecimento Total
+                    </h5>
+                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_total) }}</h2>
+                    <p class="text-muted">no período</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4 - Frete Médio -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info mb-3">
+                        <i class="fas fa-money-bill-wave"></i> Frete Médio
+                    </h5>
+                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.frete_medio) }}</h2>
+                    <p class="text-muted">por carga</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 5 - Frete Total -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning mb-3">
+                        <i class="fas fa-money-bill-wave"></i> Frete Total
+                    </h5>
+                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.frete_total) }}</h2>
+                    <p class="text-muted">no período</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 6 - Valor a Pagar Total -->
+        <div class="col-md-4 mb-4">
+            <div class="card card-3d">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success mb-3">
+                        <i class="fas fa-hand-holding-usd"></i> Valor a Pagar Total
+                    </h5>
+                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.valor_pagar_total) }}</h2>
+                    <p class="text-muted">no período</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de Linha - Evolução do Frete -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Evolução do Frete</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoLinha" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Pizza - Distribuição de Gastos -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Distribuição de Gastos</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoPizza" style="height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-3d {
+    background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 
+        5px 5px 15px rgba(0,0,0,0.2),
+        -5px -5px 15px rgba(255,255,255,0.7);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-3d:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+        8px 8px 20px rgba(0,0,0,0.25),
+        -8px -8px 20px rgba(255,255,255,0.8);
+}
+
+.card-3d .card-body {
+    padding: 2rem;
+}
+
+.display-4 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 1rem 0;
+}
+
+.text-muted {
+    font-size: 0.9rem;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Linha
+    const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
+    new Chart(ctxLinha, {
+        type: 'line',
+        data: {
+            labels: {{ resumo.grafico_linha.datas | tojson }},
+            datasets: [{
+                label: 'Valor do Frete',
+                data: {{ resumo.grafico_linha.fretes | tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de Pizza
+    const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+    new Chart(ctxPizza, {
+        type: 'doughnut',
+        data: {
+            labels: {{ resumo.grafico_pizza.labels | tojson }},
+            datasets: [{
+                data: {{ resumo.grafico_pizza.valores | tojson }},
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

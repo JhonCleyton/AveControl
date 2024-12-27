@@ -14,6 +14,7 @@ from routes.notificacoes import notificacoes_bp
 from routes.chat import chat_bp
 from routes.main import main_bp
 from routes.resumos import resumos_bp
+from routes.relatorios import relatorios_bp
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(dev_bp, url_prefix='/dev')
     app.register_blueprint(notificacoes_bp, url_prefix='/notificacoes')
     app.register_blueprint(resumos_bp, url_prefix='/resumos')
+    app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
 
     return app
 
