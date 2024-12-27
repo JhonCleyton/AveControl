@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Formulário de Produção</h2>
+    
+    <!-- Buscar Carga -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Buscar Carga</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="numero_carga" name="numero_carga" placeholder="Digite o número da carga">
+                        <button class="btn btn-primary" type="button" onclick="window.buscarCargaProducao()">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" id="formProducao">
+        <input type="hidden" id="carga_id" name="carga_id">
+        
+        <!-- Contagem de Aves -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Contagem de Aves</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_granja" class="form-label">Aves na Granja</label>
+                        <input type="number" class="form-control" id="aves_granja" name="aves_granja" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_mortas" class="form-label">Aves Mortas</label>
+                        <input type="number" class="form-control" id="aves_mortas" name="aves_mortas" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_recebidas" class="form-label">Aves Recebidas</label>
+                        <input type="number" class="form-control" id="aves_recebidas" name="aves_recebidas" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_contador" class="form-label">Aves Contador</label>
+                        <input type="number" class="form-control" id="aves_contador" name="aves_contador" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_por_caixa" class="form-label">Aves por Caixa</label>
+                        <input type="number" class="form-control" id="aves_por_caixa" name="aves_por_caixa" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avarias -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Avarias</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="mortalidade_excesso" class="form-label">Mortalidade por Excesso (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="mortalidade_excesso" name="mortalidade_excesso" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_molhadas_granja" class="form-label">Aves Molhadas na Granja (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="aves_molhadas_granja" name="aves_molhadas_granja" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_molhadas_chuva" class="form-label">Aves Molhadas por Chuva (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="aves_molhadas_chuva" name="aves_molhadas_chuva" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="quebra_maus_tratos" class="form-label">Quebra por Maus Tratos (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="quebra_maus_tratos" name="quebra_maus_tratos" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="aves_papo_cheio" class="form-label">Aves com Papo Cheio (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="aves_papo_cheio" name="aves_papo_cheio" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="outras_quebras" class="form-label">Outras Quebras (KG)</label>
+                        <input type="number" step="0.01" class="form-control avaria-input" id="outras_quebras" name="outras_quebras" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="descricao_quebras" class="form-label">Descrição das Quebras</label>
+                        <textarea class="form-control" id="descricao_quebras" name="descricao_quebras" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="total_avarias" class="form-label">Total de Avarias (KG)</label>
+                        <input type="number" step="0.01" class="form-control" id="total_avarias" name="total_avarias" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Salvar Produção
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar se há número de carga na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const numeroCargaParam = urlParams.get('carga');
+    if (numeroCargaParam) {
+        document.getElementById('numero_carga').value = numeroCargaParam;
+        buscarCargaProducao();
+    }
+
+    // Definindo a função no escopo global
+    window.buscarCargaProducao = function() {
+        const numeroCarga = document.getElementById('numero_carga').value;
+        if (!numeroCarga) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Por favor, digite o número da carga'
+            });
+            return;
+        }
+
+        fetch(`/cargas/producao/buscar/${numeroCarga}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Carga não encontrada');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('carga_id').value = data.carga.id;
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Carga Encontrada',
+                        text: `Carga ${numeroCarga} encontrada com sucesso!`
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: data.message || 'Carga não encontrada'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro ao buscar a carga'
+                });
+            });
+    }
+
+    // Função para calcular o total de avarias
+    function calcularTotalAvarias() {
+        const campos = [
+            'mortalidade_excesso',
+            'aves_molhadas_granja',
+            'aves_molhadas_chuva',
+            'quebra_maus_tratos',
+            'aves_papo_cheio',
+            'outras_quebras'
+        ];
+
+        let total = 0;
+        campos.forEach(campo => {
+            const valor = parseFloat(document.getElementById(campo).value) || 0;
+            total += valor;
+        });
+
+        document.getElementById('total_avarias').value = total.toFixed(2);
+    }
+
+    // Adicionar evento de input para todos os campos de avaria
+    document.querySelectorAll('.avaria-input').forEach(input => {
+        input.addEventListener('input', calcularTotalAvarias);
+    });
+
+    // Calcular total inicial
+    calcularTotalAvarias();
+
+    // Formulário submit
+    document.getElementById('formProducao').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!document.getElementById('carga_id').value) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Por favor, primeiro busque uma carga'
+            });
+            return;
+        }
+
+        // Coletar todos os dados do formulário
+        const formData = {};
+        const form = this;
+        Array.from(form.elements).forEach(element => {
+            if (element.name) {
+                formData[element.name] = element.value;
+            }
+        });
+
+        // Enviar dados via fetch
+        fetch('/cargas/producao/salvar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso',
+                    text: 'Produção salva com sucesso!',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = `/cargas/visualizar/${formData.carga_id}`;
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: data.message || 'Erro ao salvar produção'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao salvar produção'
+            });
+        });
+    });
+});
+
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+<!-- Dropdown de Notificações -->
+<li class="nav-item dropdown">
+    <a class="nav-link" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-bell"></i>
+        <span class="badge bg-danger" id="notificacoes-contador" style="display: none;">0</span>
+    </a>
+    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacoesDropdown" style="width: 300px; max-height: 500px; overflow-y: auto;">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+            <h6 class="mb-0">Notificações</h6>
+            <button class="btn btn-sm btn-link text-decoration-none" onclick="marcarTodasComoLidas()">
+                Marcar todas como lidas
+            </button>
+        </div>
+        <div id="notificacoes-lista" class="py-2">
+            <!-- As notificações serão inseridas aqui via JavaScript -->
+        </div>
+    </div>
+</li>
+
+<!-- Template para Notificação -->
+<template id="notificacao-template">
+    <div class="dropdown-item notification-item border-bottom py-2" data-id="">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h6 class="notification-title mb-1"></h6>
+                <p class="notification-message text-muted small mb-1"></p>
+                <small class="notification-time text-muted"></small>
+            </div>
+            <button class="btn btn-sm text-muted" onclick="marcarComoLida(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- Script de Notificações -->
+<script>
+let notificacoesInterval;
+
+function inicializarNotificacoes() {
+    // Busca notificações a cada 30 segundos
+    buscarNotificacoes();
+    notificacoesInterval = setInterval(buscarNotificacoes, 30000);
+}
+
+function buscarNotificacoes() {
+    fetch('/notificacoes/nao_lidas')
+        .then(response => response.json())
+        .then(notificacoes => {
+            atualizarNotificacoes(notificacoes);
+            verificarPopups(notificacoes);
+        });
+}
+
+function atualizarNotificacoes(notificacoes) {
+    const lista = document.getElementById('notificacoes-lista');
+    const contador = document.getElementById('notificacoes-contador');
+    const template = document.getElementById('notificacao-template');
+    
+    // Atualiza contador
+    if (notificacoes.length > 0) {
+        contador.textContent = notificacoes.length;
+        contador.style.display = 'inline';
+    } else {
+        contador.style.display = 'none';
+    }
+    
+    // Limpa lista atual
+    lista.innerHTML = notificacoes.length ? '' : '<div class="text-center py-3">Nenhuma notificação</div>';
+    
+    // Adiciona novas notificações
+    notificacoes.forEach(notificacao => {
+        const clone = template.content.cloneNode(true);
+        const item = clone.querySelector('.notification-item');
+        
+        item.dataset.id = notificacao.id;
+        item.querySelector('.notification-title').textContent = notificacao.titulo;
+        item.querySelector('.notification-message').textContent = notificacao.mensagem;
+        item.querySelector('.notification-time').textContent = notificacao.data_criacao;
+        
+        if (notificacao.carga_id) {
+            item.onclick = () => window.location.href = `/cargas/visualizar/${notificacao.carga_id}`;
+            item.style.cursor = 'pointer';
+        }
+        
+        lista.appendChild(clone);
+    });
+}
+
+function verificarPopups(notificacoes) {
+    notificacoes.forEach(notificacao => {
+        if (notificacao.exibir_popup) {
+            Swal.fire({
+                title: notificacao.titulo,
+                text: notificacao.mensagem,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                marcarComoLida(null, notificacao.id);
+            });
+        }
+    });
+}
+
+function marcarComoLida(btn, notificacaoId) {
+    // Se o botão foi clicado, pega o ID da notificação do elemento pai
+    const id = notificacaoId || btn.closest('.notification-item').dataset.id;
+    
+    fetch(`/notificacoes/marcar_como_lida/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            buscarNotificacoes();
+        }
+    });
+    
+    // Previne a propagação do clique se veio do botão
+    if (btn) {
+        event.stopPropagation();
+    }
+}
+
+function marcarTodasComoLidas() {
+    fetch('/notificacoes/marcar_todas_como_lidas', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            buscarNotificacoes();
+        }
+    });
+}
+
+// Inicializa o sistema de notificações quando o documento estiver pronto
+document.addEventListener('DOMContentLoaded', inicializarNotificacoes);
+
+// Limpa o intervalo quando a página for fechada
+window.addEventListener('beforeunload', () => {
+    clearInterval(notificacoesInterval);
+});
+</script>

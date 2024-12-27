@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Gestão de Usuários</h2>
+        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#novoUsuarioModal">
+            <i class="fas fa-plus"></i> Novo Usuário
+        </button>
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuário</th>
+                        <th>E-mail</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.tipo }}</td>
+                        <td>
+                            {% if user.ativo %}
+                            <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="editarUsuario({{ user.id }}, '{{ user.username }}', '{{ user.email }}', '{{ user.tipo }}', {{ 'true' if user.ativo else 'false' }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            {% if user.username != 'gerente' %}
+                            <button class="btn btn-sm btn-danger" onclick="excluirUsuario({{ user.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Usuário -->
+<div class="modal fade" id="novoUsuarioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="novoUsuarioForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="tipo" required>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="diretoria">Diretoria</option>
+                            <option value="desenvolvedor">Desenvolvedor</option>
+                            <option value="balanca">Balança</option>
+                            <option value="transportadora">Transportadora</option>
+                            <option value="producao">Produção</option>
+                            <option value="fechamento">Fechamento</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuário -->
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editarUsuarioForm">
+                    <input type="hidden" id="editUserId">
+                    <div class="mb-3">
+                        <label for="editUsername" class="form-label">Usuário</label>
+                        <input type="text" class="form-control" id="editUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" id="editEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="editTipo" required>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="diretoria">Diretoria</option>
+                            <option value="desenvolvedor">Desenvolvedor</option>
+                            <option value="balanca">Balança</option>
+                            <option value="transportadora">Transportadora</option>
+                            <option value="producao">Produção</option>
+                            <option value="fechamento">Fechamento</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPassword" class="form-label">Nova Senha (deixe em branco para manter a atual)</label>
+                        <input type="password" class="form-control" id="editPassword">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editAtivo">
+                            <label class="form-check-label" for="editAtivo">Usuário Ativo</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts específicos da página -->
+<script>
+    // Criar novo usuário
+    document.querySelector('#novoUsuarioModal .btn-primary').addEventListener('click', function() {
+        const formData = {
+            username: document.querySelector('#username').value,
+            email: document.querySelector('#email').value,
+            tipo: document.querySelector('#tipo').value,
+            password: document.querySelector('#password').value
+        };
+
+        fetch('/usuarios/criar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao criar usuário');
+        });
+    });
+
+    // Abrir modal de edição
+    function editarUsuario(userId, username, email, tipo, ativo) {
+        document.getElementById('editUserId').value = userId;
+        document.getElementById('editUsername').value = username;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editTipo').value = tipo;
+        document.getElementById('editAtivo').checked = ativo;
+        document.getElementById('editPassword').value = '';
+        
+        new bootstrap.Modal(document.getElementById('editarUsuarioModal')).show();
+    }
+
+    // Salvar edição
+    function salvarEdicao() {
+        const userId = document.getElementById('editUserId').value;
+        const formData = {
+            username: document.getElementById('editUsername').value,
+            email: document.getElementById('editEmail').value,
+            tipo: document.getElementById('editTipo').value,
+            password: document.getElementById('editPassword').value,
+            ativo: document.getElementById('editAtivo').checked
+        };
+
+        fetch(`/usuarios/editar/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao atualizar usuário');
+        });
+    }
+
+    // Excluir usuário
+    function excluirUsuario(userId) {
+        if (!confirm('Tem certeza que deseja desativar este usuário?')) {
+            return;
+        }
+
+        fetch(`/usuarios/excluir/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao desativar usuário');
+        });
+    }
+</script>
+{% endblock %}

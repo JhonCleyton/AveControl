@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">
+        <i class="fas fa-cogs"></i> Configurações do Sistema
+    </h2>
+
+    <div class="row">
+        <!-- Configurações de Formulário -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-alt"></i> Formulários
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie os campos e configurações dos formulários do sistema.</p>
+                    <a href="{{ url_for('dev.formularios') }}" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Configurar Formulários
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurações de Usuário -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i> Usuários
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie os usuários e suas configurações.</p>
+                    <a href="{{ url_for('auth.usuarios') }}" class="btn btn-success">
+                        <i class="fas fa-user-cog"></i> Gerenciar Usuários
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurações de Sistema -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database"></i> Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Configurações gerais do sistema.</p>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Versão do Sistema</h6>
+                                    <small>1.0.0</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Banco de Dados</h6>
+                                    <small>SQLite</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

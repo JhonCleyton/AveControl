@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .campo-form {
+        border-left: 4px solid #007bff;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+    }
+    .campo-form:hover {
+        background-color: #e9ecef;
+    }
+    .drag-handle {
+        cursor: move;
+        color: #6c757d;
+    }
+    .drag-handle:hover {
+        color: #343a40;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">
+        <i class="fas fa-list-alt"></i> Configuração de Formulários
+    </h2>
+
+    <!-- Botão para adicionar novo campo -->
+    <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#novoCampoModal">
+        <i class="fas fa-plus"></i> Novo Campo
+    </button>
+
+    <!-- Lista de campos -->
+    <div id="listaCampos">
+        {% if campos %}
+            {% for campo in campos %}
+            <div class="campo-form" data-id="{{ campo.id }}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-2">{{ campo.nome_campo }}</h5>
+                        <p class="mb-1"><strong>Tipo:</strong> {{ campo.tipo_campo }}</p>
+                        <p class="mb-1"><strong>Obrigatório:</strong> {{ 'Sim' if campo.obrigatorio else 'Não' }}</p>
+                        {% if campo.opcoes %}
+                        <p class="mb-1"><strong>Opções:</strong> {{ campo.opcoes }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-primary me-2" onclick="editarCampo({{ campo.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="excluirCampo({{ campo.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <span class="ms-2 drag-handle">
+                            <i class="fas fa-grip-vertical"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhum campo configurado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para Novo Campo -->
+<div class="modal fade" id="novoCampoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Campo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoCampo">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Campo</label>
+                        <input type="text" class="form-control" name="nome_campo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo do Campo</label>
+                        <select class="form-select" name="tipo_campo" required>
+                            <option value="text">Texto</option>
+                            <option value="number">Número</option>
+                            <option value="date">Data</option>
+                            <option value="select">Seleção</option>
+                            <option value="checkbox">Checkbox</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="obrigatorio" id="obrigatorio">
+                            <label class="form-check-label" for="obrigatorio">Campo Obrigatório</label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="opcoesGroup" style="display: none;">
+                        <label class="form-label">Opções (separadas por vírgula)</label>
+                        <input type="text" class="form-control" name="opcoes" placeholder="Opção 1, Opção 2, Opção 3">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarCampo()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+// Inicializar Sortable para arrastar e soltar
+new Sortable(document.getElementById('listaCampos'), {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd: function(evt) {
+        atualizarOrdem();
+    }
+});
+
+// Mostrar/esconder campo de opções baseado no tipo selecionado
+document.querySelector('select[name="tipo_campo"]').addEventListener('change', function(e) {
+    const opcoesGroup = document.getElementById('opcoesGroup');
+    opcoesGroup.style.display = e.target.value === 'select' ? 'block' : 'none';
+});
+
+function salvarCampo() {
+    const form = document.getElementById('formNovoCampo');
+    const data = {
+        nome_campo: form.nome_campo.value,
+        tipo_campo: form.tipo_campo.value,
+        obrigatorio: form.obrigatorio.checked,
+        opcoes: form.tipo_campo.value === 'select' ? form.opcoes.value : null
+    };
+
+    fetch('/desenvolvedor/criar-campo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao salvar campo: ' + data.message);
+        }
+    });
+}
+
+function editarCampo(id) {
+    // Implementar edição de campo
+}
+
+function excluirCampo(id) {
+    if (confirm('Tem certeza que deseja excluir este campo?')) {
+        // Implementar exclusão de campo
+    }
+}
+
+function atualizarOrdem() {
+    const campos = document.querySelectorAll('.campo-form');
+    const ordem = Array.from(campos).map((campo, index) => ({
+        id: campo.dataset.id,
+        ordem: index + 1
+    }));
+
+    // Implementar atualização da ordem
+}
+</script>
+{% endblock %}

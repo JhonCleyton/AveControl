@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Gerenciamento de Permissões</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Usuários e suas Permissões</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Permissões</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                <tr>
+                                    <td>{{ usuario.username }}</td>
+                                    <td>
+                                        {% for permissao in usuario.permissoes %}
+                                        <span class="badge bg-primary me-1">{{ permissao.nome }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="abrirModalPermissoes('{{ usuario.id }}')">
+                                            Gerenciar Permissões
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Permissões -->
+<div class="modal fade" id="modalPermissoes" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gerenciar Permissões</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="listaPermissoes">
+                    {% for permissao in permissoes %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input permissao-checkbox" type="checkbox" 
+                               value="{{ permissao.id }}" id="permissao{{ permissao.id }}">
+                        <label class="form-check-label" for="permissao{{ permissao.id }}">
+                            {{ permissao.nome }} - {{ permissao.descricao }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarPermissoes()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let usuarioAtual = null;
+const modal = new bootstrap.Modal(document.getElementById('modalPermissoes'));
+
+function abrirModalPermissoes(userId) {
+    usuarioAtual = userId;
+    
+    // Buscar permissões do usuário
+    fetch(`/desenvolvedor/permissoes/usuario/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Limpar todas as checkboxes
+            document.querySelectorAll('.permissao-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Marcar as permissões que o usuário possui
+            data.permissoes.forEach(permissao => {
+                const checkbox = document.getElementById(`permissao${permissao.id}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            modal.show();
+        });
+}
+
+function salvarPermissoes() {
+    const permissoesSelecionadas = Array.from(document.querySelectorAll('.permissao-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+    
+    fetch('/desenvolvedor/permissoes/atualizar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: usuarioAtual,
+            permissoes: permissoesSelecionadas
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao salvar permissões: ' + data.message);
+        }
+    });
+}
+</script>
+{% endblock %}

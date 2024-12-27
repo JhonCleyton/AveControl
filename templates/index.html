@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Bem-vindo ao Sistema de Gerenciamento de Carga</h2>
+        <p>Selecione uma opção no menu acima para começar.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Nova Carga</h5>
+                <p class="card-text">Registrar uma nova carga no sistema.</p>
+                <a href="{{ url_for('cargas.nova_carga') }}" class="btn btn-primary">Criar Carga</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Ver Cargas</h5>
+                <p class="card-text">Visualizar todas as cargas registradas.</p>
+                <a href="{{ url_for('cargas.todas_cargas') }}" class="btn btn-primary">Ver Cargas</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Cargas Incompletas</h5>
+                <p class="card-text">Visualizar cargas com informações pendentes.</p>
+                <a href="{{ url_for('cargas.cargas_incompletas') }}" class="btn btn-primary">Ver Incompletas</a>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.tipo == 'gerente' %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Gestão de Usuários</h5>
+                <p class="card-text">Gerencie os usuários do sistema.</p>
+                <a href="{{ url_for('auth.usuarios') }}" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Outros cards de funcionalidades serão adicionados aqui -->
+</div>
+{% endblock %}

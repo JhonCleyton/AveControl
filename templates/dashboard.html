@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .dashboard-container {
+        padding: 2rem;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.1;
+        z-index: -1;
+        width: 400px;
+        pointer-events: none;
+    }
+
+    .welcome-section {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #007bff;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+        
+        .card-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="watermark">
+    
+    <div class="welcome-section">
+        <h1>Bem-vindo(a), {{ current_user.nome }}!</h1>
+        <p class="text-muted">Sistema de Gerenciamento de Cargas</p>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_cargas }}</div>
+            <div class="stat-label">Total de Cargas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.cargas_pendentes }}</div>
+            <div class="stat-label">Cargas Pendentes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.cargas_hoje }}</div>
+            <div class="stat-label">Cargas Hoje</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.cargas_mes }}</div>
+            <div class="stat-label">Cargas este Mês</div>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        {% if current_user.tipo == 'balanca' %}
+        <a href="{{ url_for('cargas.nova_carga') }}" class="dashboard-card">
+            <i class="fas fa-plus-circle card-icon"></i>
+            <div class="card-title">Nova Carga</div>
+            <div class="card-description">Criar uma nova carga no sistema</div>
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('cargas.cargas_incompletas') }}" class="dashboard-card">
+            <i class="fas fa-clock card-icon"></i>
+            <div class="card-title">Cargas Incompletas</div>
+            <div class="card-description">Visualizar cargas pendentes de finalização</div>
+        </a>
+
+        <a href="{{ url_for('cargas.listar_cargas') }}" class="dashboard-card">
+            <i class="fas fa-list card-icon"></i>
+            <div class="card-title">Todas as Cargas</div>
+            <div class="card-description">Lista completa de todas as cargas</div>
+        </a>
+
+        {% if current_user.tipo == 'producao' %}
+        <a href="{{ url_for('cargas.producao') }}" class="dashboard-card">
+            <i class="fas fa-industry card-icon"></i>
+            <div class="card-title">Produção</div>
+            <div class="card-description">Gerenciar produção das cargas</div>
+        </a>
+        {% endif %}
+
+        {% if current_user.tipo == 'fechamento' %}
+        <a href="{{ url_for('cargas.fechamento_carga', id=0) }}" class="dashboard-card">
+            <i class="fas fa-file-invoice-dollar card-icon"></i>
+            <div class="card-title">Fechamento</div>
+            <div class="card-description">Realizar fechamento de cargas</div>
+        </a>
+        {% endif %}
+
+        {% if current_user.tipo == 'financeiro' %}
+        <a href="{{ url_for('financeiro.aprovar_notas') }}" class="dashboard-card">
+            <i class="fas fa-check-circle card-icon"></i>
+            <div class="card-title">Aprovar Notas</div>
+            <div class="card-description">Aprovar notas de cargas</div>
+        </a>
+        {% endif %}
+
+        {% if current_user.tipo == 'diretoria' %}
+        <a href="{{ url_for('diretoria.autorizar_notas') }}" class="dashboard-card">
+            <i class="fas fa-signature card-icon"></i>
+            <div class="card-title">Autorizar Notas</div>
+            <div class="card-description">Autorizar notas aprovadas</div>
+        </a>
+        {% endif %}
+
+        {% if current_user.tipo == 'gerente' %}
+        <a href="{{ url_for('usuarios.index') }}" class="dashboard-card">
+            <i class="fas fa-users-cog card-icon"></i>
+            <div class="card-title">Gerenciar Usuários</div>
+            <div class="card-description">Administrar usuários do sistema</div>
+        </a>
+        <a href="{{ url_for('solicitacoes.index') }}" class="dashboard-card">
+            <i class="fas fa-tasks card-icon"></i>
+            <div class="card-title">Gerenciar Solicitações</div>
+            <div class="card-description">Administrar solicitações pendentes</div>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

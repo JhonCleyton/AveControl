@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Lista de Cargas</h1>
+        {% if current_user.tipo == 'balanca' %}
+        <a href="{{ url_for('cargas.nova_carga') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Carga
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Número da Carga</th>
+                    <th>Data</th>
+                    <th>Tipo de Ave</th>
+                    <th>Motorista</th>
+                    <th>Status Nota</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for carga in cargas %}
+                <tr>
+                    <td>{{ carga.numero_carga }}</td>
+                    <td>{{ carga.criado_em.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ carga.tipo_ave }}</td>
+                    <td>{{ carga.motorista }}</td>
+                    <td>
+                        {% if carga.nota_autorizada %}
+                            <span class="badge bg-success">Autorizada</span>
+                        {% elif carga.nota_aprovada %}
+                            <span class="badge bg-info">Aprovada</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pendente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Botão de Visualizar (todos podem ver) -->
+                        <a href="{{ url_for('cargas.visualizar_carga', id=carga.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        
+                        <!-- Botão de Editar (apenas balança) -->
+                        {% if current_user.tipo == 'balanca' %}
+                        <a href="{{ url_for('cargas.editar_carga', id=carga.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+
+                        <!-- Botão de Produção (apenas produção) -->
+                        {% if current_user.tipo == 'producao' and not carga.producao %}
+                        <a href="{{ url_for('cargas.producao', id=carga.id) }}" class="btn btn-sm btn-success" title="Adicionar Produção">
+                            <i class="fas fa-industry"></i>
+                        </a>
+                        {% endif %}
+
+                        <!-- Botão de Fechamento (apenas fechamento) -->
+                        {% if current_user.tipo == 'fechamento' and not carga.fechamento %}
+                        <a href="{{ url_for('cargas.fechamento_carga', id=carga.id) }}" class="btn btn-sm btn-primary" title="Adicionar Fechamento">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </a>
+                        {% endif %}
+
+                        {% if not carga.nota_aprovada %}
+                        <button onclick="aprovarNota({{ carga.id }})" class="btn btn-sm btn-success" title="Aprovar Nota">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {% endif %}
+                        {% if carga.nota_aprovada and not carga.nota_autorizada and current_user.tipo in ['gerente', 'admin'] %}
+                        <button onclick="autorizarNota({{ carga.id }})" class="btn btn-sm btn-primary" title="Autorizar Nota">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aprovarNota(id) {
+    Swal.fire({
+        title: 'Aprovar Nota',
+        text: 'Tem certeza que deseja aprovar esta nota?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, aprovar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/cargas/aprovar_nota/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Sucesso!', data.message, 'success')
+                    .then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Erro!', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire('Erro!', 'Erro ao aprovar nota', 'error');
+            });
+        }
+    });
+}
+
+function autorizarNota(id) {
+    Swal.fire({
+        title: 'Autorizar Nota',
+        html: `
+            <input type="password" id="senha" class="swal2-input" placeholder="Digite sua senha">
+            <textarea id="assinatura" class="swal2-textarea" placeholder="Digite sua assinatura"></textarea>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Autorizar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const senha = Swal.getPopup().querySelector('#senha').value;
+            const assinatura = Swal.getPopup().querySelector('#assinatura').value;
+            
+            if (!senha || !assinatura) {
+                Swal.showValidationMessage('Por favor, preencha todos os campos');
+                return false;
+            }
+            
+            return { senha, assinatura };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/cargas/autorizar_nota/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(result.value)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Sucesso!', data.message, 'success')
+                    .then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Erro!', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire('Erro!', 'Erro ao autorizar nota', 'error');
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

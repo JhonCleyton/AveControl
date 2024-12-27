@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Nova Produção</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="formProducao" method="POST" action="{{ url_for('producao.salvar_producao') }}">
+                <div class="mb-3">
+                    <label for="numero_carga" class="form-label">Número da Carga</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="numero_carga" name="numero_carga" required>
+                        <button type="button" class="btn btn-primary" onclick="buscarCarga()">Buscar</button>
+                    </div>
+                </div>
+
+                <div id="infoCarga" style="display: none;" class="mb-3">
+                    <div class="alert alert-info">
+                        <h5>Informações da Carga</h5>
+                        <p><strong>Motorista:</strong> <span id="motorista"></span></p>
+                        <p><strong>Data de Abate:</strong> <span id="data_abate"></span></p>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="data_producao" class="form-label">Data da Produção</label>
+                    <input type="date" class="form-control" id="data_producao" name="data_producao" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="quantidade_producao" class="form-label">Quantidade</label>
+                    <input type="number" class="form-control" id="quantidade_producao" name="quantidade_producao" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="valor_unitario" class="form-label">Valor Unitário</label>
+                    <input type="number" step="0.01" class="form-control" id="valor_unitario" name="valor_unitario" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="valor_total" class="form-label">Valor Total</label>
+                    <input type="number" step="0.01" class="form-control" id="valor_total" name="valor_total" readonly>
+                </div>
+
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salvar Produção</button>
+                <a href="{{ url_for('producao.producao') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function buscarCarga() {
+    const numeroCarga = document.getElementById('numero_carga').value;
+    
+    fetch(`/producao/buscar_carga_producao/${numeroCarga}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('infoCarga').style.display = 'block';
+                document.getElementById('motorista').textContent = data.carga.motorista;
+                document.getElementById('data_abate').textContent = data.carga.data_abate;
+            } else {
+                alert('Carga não encontrada');
+                document.getElementById('infoCarga').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao buscar carga');
+        });
+}
+
+// Calcular valor total quando quantidade ou valor unitário mudar
+document.getElementById('quantidade_producao').addEventListener('input', calcularTotal);
+document.getElementById('valor_unitario').addEventListener('input', calcularTotal);
+
+function calcularTotal() {
+    const quantidade = document.getElementById('quantidade_producao').value;
+    const valorUnitario = document.getElementById('valor_unitario').value;
+    const valorTotal = quantidade * valorUnitario;
+    document.getElementById('valor_total').value = valorTotal.toFixed(2);
+}
+</script>
+{% endblock %}
