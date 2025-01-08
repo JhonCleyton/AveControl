@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h2>Editar Produção</h2>
+            
+            <!-- Buscar Carga -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="numero_carga">Número da Carga:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="numero_carga" placeholder="Digite o número da carga">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" onclick="buscarCarga()">Buscar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulário de Produção -->
+            <div id="form_producao" style="display: none;">
+                <form id="producaoForm" onsubmit="return salvarProducao(event)">
+                    <input type="hidden" id="carga_id">
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Dados da Carga</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p><strong>Número da Carga:</strong> <span id="display_numero_carga"></span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>Tipo de Ave:</strong> <span id="display_tipo_ave"></span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>Data de Abate:</strong> <span id="display_data_abate"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Contagem de Aves</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_granja">Aves da Granja:</label>
+                                        <input type="number" class="form-control" id="aves_granja" name="aves_granja" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_mortas">Aves Mortas:</label>
+                                        <input type="number" class="form-control" id="aves_mortas" name="aves_mortas" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_recebidas">Aves Recebidas:</label>
+                                        <input type="number" class="form-control" id="aves_recebidas" name="aves_recebidas" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="aves_contador">Aves no Contador:</label>
+                                        <input type="number" class="form-control" id="aves_contador" name="aves_contador" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="aves_por_caixa">Aves por Caixa:</label>
+                                        <input type="number" class="form-control" id="aves_por_caixa" name="aves_por_caixa" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Avarias</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="mortalidade_excesso">Mortalidade em Excesso (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="mortalidade_excesso" name="mortalidade_excesso" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_molhadas_granja">Aves Molhadas na Granja (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="aves_molhadas_granja" name="aves_molhadas_granja" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_molhadas_chuva">Aves Molhadas na Chuva (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="aves_molhadas_chuva" name="aves_molhadas_chuva" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="quebra_maus_tratos">Quebra por Maus Tratos (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="quebra_maus_tratos" name="quebra_maus_tratos" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="aves_papo_cheio">Aves com Papo Cheio (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="aves_papo_cheio" name="aves_papo_cheio" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="outras_quebras">Outras Quebras (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="outras_quebras" name="outras_quebras" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="descricao_quebras">Descrição das Quebras:</label>
+                                        <textarea class="form-control" id="descricao_quebras" name="descricao_quebras" rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="total_avarias">Total de Avarias (%):</label>
+                                        <input type="number" step="0.01" class="form-control" id="total_avarias" name="total_avarias" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function buscarCarga() {
+    const numero_carga = document.getElementById('numero_carga').value;
+    
+    fetch(`/cargas/producao/buscar/${numero_carga}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('form_producao').style.display = 'block';
+                document.getElementById('carga_id').value = data.carga.id;
+                document.getElementById('display_numero_carga').textContent = data.carga.numero_carga;
+                document.getElementById('display_tipo_ave').textContent = data.carga.tipo_ave;
+                document.getElementById('display_data_abate').textContent = data.carga.data_abate;
+                
+                // Preencher dados de produção existentes
+                if (data.producao) {
+                    document.getElementById('aves_granja').value = data.producao.aves_granja;
+                    document.getElementById('aves_mortas').value = data.producao.aves_mortas;
+                    document.getElementById('aves_recebidas').value = data.producao.aves_recebidas;
+                    document.getElementById('aves_contador').value = data.producao.aves_contador;
+                    document.getElementById('aves_por_caixa').value = data.producao.aves_por_caixa;
+                    document.getElementById('mortalidade_excesso').value = data.producao.mortalidade_excesso;
+                    document.getElementById('aves_molhadas_granja').value = data.producao.aves_molhadas_granja;
+                    document.getElementById('aves_molhadas_chuva').value = data.producao.aves_molhadas_chuva;
+                    document.getElementById('quebra_maus_tratos').value = data.producao.quebra_maus_tratos;
+                    document.getElementById('aves_papo_cheio').value = data.producao.aves_papo_cheio;
+                    document.getElementById('outras_quebras').value = data.producao.outras_quebras;
+                    document.getElementById('descricao_quebras').value = data.producao.descricao_quebras;
+                    document.getElementById('total_avarias').value = data.producao.total_avarias;
+                }
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao buscar carga');
+        });
+}
+
+function salvarProducao(event) {
+    event.preventDefault();
+    
+    const formData = {
+        carga_id: document.getElementById('carga_id').value,
+        aves_granja: parseInt(document.getElementById('aves_granja').value),
+        aves_mortas: parseInt(document.getElementById('aves_mortas').value),
+        aves_recebidas: parseInt(document.getElementById('aves_recebidas').value),
+        aves_contador: parseInt(document.getElementById('aves_contador').value),
+        aves_por_caixa: parseInt(document.getElementById('aves_por_caixa').value),
+        mortalidade_excesso: parseFloat(document.getElementById('mortalidade_excesso').value),
+        aves_molhadas_granja: parseFloat(document.getElementById('aves_molhadas_granja').value),
+        aves_molhadas_chuva: parseFloat(document.getElementById('aves_molhadas_chuva').value),
+        quebra_maus_tratos: parseFloat(document.getElementById('quebra_maus_tratos').value),
+        aves_papo_cheio: parseFloat(document.getElementById('aves_papo_cheio').value),
+        outras_quebras: parseFloat(document.getElementById('outras_quebras').value),
+        descricao_quebras: document.getElementById('descricao_quebras').value,
+        total_avarias: parseFloat(document.getElementById('total_avarias').value)
+    };
+    
+    fetch('/cargas/producao/salvar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Produção salva com sucesso!');
+            window.location.href = '/';
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar produção');
+    });
+    
+    return false;
+}
+</script>
+{% endblock %}

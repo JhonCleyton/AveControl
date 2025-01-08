@@ -71,7 +71,8 @@
                 </div>
             </div>
         </div>
-                <!-- Informações do Transporte -->
+
+        <!-- Informações do Transporte -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Informações do Transporte</h5>
@@ -81,59 +82,60 @@
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="motorista" class="form-label">Motorista</label>
-                            <select class="form-select" id="motorista">
+                            <select class="form-select" id="motorista" onchange="toggleOutroMotorista()">
                                 <option value="">Selecione...</option>
-                                <option value="Claudio Ferreira Salomão" {% if carga.motorista == 'Claudio Ferreira Salomão' %}selected{% endif %}>Claudio Ferreira Salomão</option>
-                                <option value="Edimilton Silva Santos" {% if carga.motorista == 'Edimilton Silva Santos' %}selected{% endif %}>Edimilton Silva Santos</option>
-                                <option value="Fabricio Santos de Sá" {% if carga.motorista == 'Fabricio Santos de Sá' %}selected{% endif %}>Fabricio Santos de Sá</option>
-                                <option value="Gilson dos Santos Gonçalves" {% if carga.motorista == 'Gilson dos Santos Gonçalves' %}selected{% endif %}>Gilson dos Santos Gonçalves</option>
-                                <option value="Lucielio dos Santos Bonfim" {% if carga.motorista == 'Lucielio dos Santos Bonfim' %}selected{% endif %}>Lucielio dos Santos Bonfim</option>
-                                <option value="Sadraque Ramos Sales" {% if carga.motorista == 'Sadraque Ramos Sales' %}selected{% endif %}>Sadraque Ramos Sales</option>
-                                <option value="Willian Cacio Cabral" {% if carga.motorista == 'Willian Cacio Cabral' %}selected{% endif %}>Willian Cacio Cabral</option>
-                                <option value="outro" {% if carga.motorista not in ['Claudio Ferreira Salomão', 'Edimilton Silva Santos', 'Fabricio Santos de Sá', 'Gilson dos Santos Gonçalves', 'Lucielio dos Santos Bonfim', 'Sadraque Ramos Sales', 'Willian Cacio Cabral'] %}selected{% endif %}>Outro</option>
+                                {% for motorista in motoristas %}
+                                <option value="{{ motorista }}" {% if carga.motorista == motorista %}selected{% endif %}>{{ motorista }}</option>
+                                {% endfor %}
+                                <option value="outro" {% if carga.motorista not in motoristas %}selected{% endif %}>Outro</option>
                             </select>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="mb-3">
+                        <div class="mb-3" id="outro-motorista-div" style="display: {% if carga.motorista not in motoristas %}block{% else %}none{% endif %}">
                             <label for="motorista_outro" class="form-label">Outro Motorista</label>
-                            <input type="text" class="form-control" id="motorista_outro" value="{{ carga.motorista_outro }}">
+                            <input type="text" class="form-control" id="motorista_outro" value="{{ carga.motorista if carga.motorista not in motoristas else '' }}">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="transportadora" class="form-label">Transportadora</label>
-                            <input type="text" class="form-control" id="transportadora" value="{{ carga.transportadora }}">
+                            <select class="form-select" id="transportadora">
+                                <option value="">Selecione...</option>
+                                {% for transportadora in transportadoras %}
+                                <option value="{{ transportadora }}" {% if carga.transportadora == transportadora %}selected{% endif %}>{{ transportadora }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="placa_veiculo" class="form-label">Placa do Veículo</label>
                             <input type="text" class="form-control" id="placa_veiculo" value="{{ carga.placa_veiculo }}">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="km_saida" class="form-label">KM Saída</label>
                             <input type="number" class="form-control" id="km_saida" value="{{ carga.km_saida }}">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="km_chegada" class="form-label">KM Chegada</label>
                             <input type="number" class="form-control" id="km_chegada" value="{{ carga.km_chegada }}">
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="km_rodados" class="form-label">KM Rodados</label>
                             <input type="number" class="form-control" id="km_rodados" value="{{ carga.km_rodados }}" readonly>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="valor_km" class="form-label">Valor por KM</label>
@@ -146,8 +148,6 @@
                             <input type="number" step="0.01" class="form-control" id="valor_frete" value="{{ carga.valor_frete }}" readonly>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="status_frete" class="form-label">Status do Frete</label>
@@ -158,134 +158,30 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="caixas_vazias" class="form-label">Caixas Vazias</label>
-                            <input type="number" class="form-control" id="caixas_vazias" value="{{ carga.caixas_vazias }}">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="quantidade_caixas" class="form-label">Quantidade de Caixas</label>
-                            <input type="number" class="form-control" id="quantidade_caixas" value="{{ carga.quantidade_caixas }}">
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
-        <!-- Subcargas -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Subcargas</h5>
-                </div>
-                <div class="card-body">
-                    <div id="subcargas-container">
-                        {% for subcarga in carga.subcargas %}
-                        <div class="subcarga-item mb-4 p-3 border rounded">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Produtor</label>
-                                        <input type="text" class="form-control subcarga-produtor" value="{{ subcarga.produtor }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Tipo de Ave</label>
-                                        <select class="form-control subcarga-tipo-ave">
-                                            <option value="">Selecione...</option>
-                                            {% for tipo in tipos_ave %}
-                                            <option value="{{ tipo }}" {% if subcarga.tipo_ave == tipo %}selected{% endif %}>{{ tipo }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">UF Produtor</label>
-                                        <input type="text" class="form-control subcarga-uf-produtor" value="{{ subcarga.uf_produtor }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Número NFe</label>
-                                        <input type="text" class="form-control subcarga-numero-nfe" value="{{ subcarga.numero_nfe }}">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Data NFe</label>
-                                        <input type="date" class="form-control subcarga-data-nfe" value="{{ subcarga.data_nfe }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Número GTA</label>
-                                        <input type="text" class="form-control subcarga-numero-gta" value="{{ subcarga.numero_gta }}">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Data GTA</label>
-                                        <input type="date" class="form-control subcarga-data-gta" value="{{ subcarga.data_gta }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button type="button" class="btn btn-success" id="adicionar-subcarga">Adicionar Subcarga</button>
-                </div>
-            </div>
-    
-            <!-- Botões de Ação -->
-            <div class="row">
-                <div class="col-12">
-                    <button type="button" class="btn btn-primary" onclick="salvarCarga()">
-                        <i class="fas fa-save"></i> Salvar Alterações
-                    </button>
-                    <a href="{{ url_for('cargas.todas_cargas') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Voltar
-                    </a>
-                </div>
-            </div>
-        </form>
-    </div>
-{% endblock %}
 
-{% block extra_js %}
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-        const cargaId = {{ carga.id }};
-        
-        // Função para adicionar nova subcarga
-        document.getElementById('adicionar-subcarga').addEventListener('click', function() {
-            const container = document.getElementById('subcargas-container');
-            const novaSubcarga = document.createElement('div');
-            novaSubcarga.className = 'subcarga-item mb-4 p-3 border rounded';
-            novaSubcarga.innerHTML = `
+        <!-- Informações do Produtor e Documentação -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações do Produtor e Documentação</h5>
+            </div>
+            <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Produtor</label>
-                            <input type="text" class="form-control subcarga-produtor">
+                            <label for="produtor" class="form-label">Produtor</label>
+                            <input type="text" class="form-control" id="produtor" value="{{ carga.produtor }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Tipo de Ave</label>
-                            <select class="form-control subcarga-tipo-ave">
+                            <label for="uf_produtor" class="form-label">UF do Produtor</label>
+                            <select class="form-select" id="uf_produtor">
                                 <option value="">Selecione...</option>
-                                {% for tipo in tipos_ave %}
-                                <option value="{{ tipo }}">{{ tipo }}</option>
+                                {% for uf in ufs %}
+                                <option value="{{ uf }}" {% if carga.uf_produtor == uf %}selected{% endif %}>{{ uf }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -294,205 +190,328 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">UF Produtor</label>
-                            <input type="text" class="form-control subcarga-uf-produtor">
+                            <label for="numero_nfe" class="form-label">Número da NFe</label>
+                            <input type="text" class="form-control" id="numero_nfe" value="{{ carga.numero_nfe }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Número NFe</label>
-                            <input type="text" class="form-control subcarga-numero-nfe">
+                            <label for="data_nfe" class="form-label">Data da NFe</label>
+                            <input type="date" class="form-control" id="data_nfe" value="{{ carga.data_nfe }}">
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Data NFe</label>
-                            <input type="date" class="form-control subcarga-data-nfe">
+                            <label for="numero_gta" class="form-label">Número do GTA</label>
+                            <input type="text" class="form-control" id="numero_gta" value="{{ carga.numero_gta }}">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Número GTA</label>
-                            <input type="text" class="form-control subcarga-numero-gta">
+                            <label for="data_gta" class="form-label">Data do GTA</label>
+                            <input type="date" class="form-control" id="data_gta" value="{{ carga.data_gta }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações de Peso -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações de Peso</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="peso_granja" class="form-label">Peso na Granja (kg)</label>
+                            <input type="number" step="0.01" class="form-control" id="peso_granja" value="{{ carga.peso_granja }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="peso_frigorifico" class="form-label">Peso no Frigorífico (kg)</label>
+                            <input type="number" step="0.01" class="form-control" id="peso_frigorifico" value="{{ carga.peso_frigorifico }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="quebra_peso" class="form-label">Quebra de Peso (kg)</label>
+                            <input type="number" step="0.01" class="form-control" id="quebra_peso" value="{{ carga.quebra_peso }}" readonly>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Data GTA</label>
-                            <input type="date" class="form-control subcarga-data-gta">
+                            <label for="percentual_quebra" class="form-label">Percentual de Quebra (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="percentual_quebra" value="{{ carga.percentual_quebra }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="motivo_alta_quebra" class="form-label">Motivo de Alta Quebra</label>
+                            <textarea class="form-control" id="motivo_alta_quebra" rows="2">{{ carga.motivo_alta_quebra }}</textarea>
                         </div>
                     </div>
                 </div>
-            `;
-            container.appendChild(novaSubcarga);
-        });
-    
-        // Event delegation para remover subcargas
-        document.getElementById('subcargas-container').addEventListener('click', function(e) {
-            if (e.target.classList.contains('remover-subcarga') || e.target.closest('.remover-subcarga')) {
-                const subcargaItem = e.target.closest('.subcarga-item');
-                subcargaItem.remove();
-            }
-        });
-    
-        // Função para salvar a carga
-        async function salvarCarga() {
-            // Coletar dados do formulário
-            const data = {
-                numero_carga: document.getElementById('numero_carga').value,
-                tipo_ave: document.getElementById('tipo_ave').value,
-                quantidade_cargas: document.getElementById('quantidade_cargas').value,
-                ordem_carga: document.getElementById('ordem_carga').value,
-                data_abate: document.getElementById('data_abate').value,
-                dia_semana: document.getElementById('dia_semana').value,
-                agenciador: document.getElementById('agenciador').value,
-                
-                // Informações do Transporte
-                motorista: document.getElementById('motorista').value,
-                motorista_outro: document.getElementById('motorista_outro').value,
-                transportadora: document.getElementById('transportadora').value,
-                placa_veiculo: document.getElementById('placa_veiculo').value,
-                km_saida: document.getElementById('km_saida').value,
-                km_chegada: document.getElementById('km_chegada').value,
-                km_rodados: document.getElementById('km_rodados').value,
-                valor_km: document.getElementById('valor_km').value,
-                valor_frete: document.getElementById('valor_frete').value,
-                status_frete: document.getElementById('status_frete').value,
-                caixas_vazias: document.getElementById('caixas_vazias').value,
-                quantidade_caixas: document.getElementById('quantidade_caixas').value,
-                
-                // Pesos e Quebras
-                peso_granja: document.getElementById('peso_granja').value,
-                peso_frigorifico: document.getElementById('peso_frigorifico').value,
-                percentual_quebra: document.getElementById('percentual_quebra').value,
-                quebra_peso: document.getElementById('quebra_peso').value,
-                motivo_alta_quebra: document.getElementById('motivo_alta_quebra').value,
-                
-                // Informações Financeiras
-                pedagios: document.getElementById('pedagios').value,
-                outras_despesas: document.getElementById('outras_despesas').value,
-                abastecimento_empresa: document.getElementById('abastecimento_empresa').value,
-                abastecimento_posto: document.getElementById('abastecimento_posto').value,
-                adiantamento: document.getElementById('adiantamento').value,
-                valor_pagar: document.getElementById('valor_pagar').value,
-                
-                // Informações do Produtor
-                produtor: document.getElementById('produtor').value,
-                uf_produtor: document.getElementById('uf_produtor').value,
-                numero_nfe: document.getElementById('numero_nfe').value,
-                data_nfe: document.getElementById('data_nfe').value,
-                numero_gta: document.getElementById('numero_gta').value,
-                data_gta: document.getElementById('data_gta').value,
-                
-                subcargas: []
-            };
-    
-            // Coletar dados das subcargas
-            document.querySelectorAll('.subcarga-item').forEach(subcarga => {
-                data.subcargas.push({
-                    produtor: subcarga.querySelector('.subcarga-produtor').value,
-                    tipo_ave: subcarga.querySelector('.subcarga-tipo-ave').value,
-                    uf_produtor: subcarga.querySelector('.subcarga-uf-produtor').value,
-                    numero_nfe: subcarga.querySelector('.subcarga-numero-nfe').value,
-                    data_nfe: subcarga.querySelector('.subcarga-data-nfe').value,
-                    numero_gta: subcarga.querySelector('.subcarga-numero-gta').value,
-                    data_gta: subcarga.querySelector('.subcarga-data-gta').value
-                });
-            });
-    
-            try {
-                const response = await fetch('/cargas/atualizar/' + cargaId, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-    
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso!',
-                        text: 'Carga atualizada com sucesso!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        window.location.href = "{{ url_for('cargas.todas_cargas') }}";
-                    });
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Erro ao atualizar a carga');
-                }
-            } catch (error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro!',
-                    text: error.message || 'Ocorreu um erro ao atualizar a carga'
-                });
+            </div>
+        </div>
+
+        <!-- Informações de Caixas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações de Caixas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="caixas_vazias" class="form-label">Caixas Vazias</label>
+                            <input type="number" class="form-control" id="caixas_vazias" value="{{ carga.caixas_vazias }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="quantidade_caixas" class="form-label">Quantidade de Caixas</label>
+                            <input type="number" class="form-control" id="quantidade_caixas" value="{{ carga.quantidade_caixas }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fechamento de Transporte -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Fechamento de Transporte</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="pedagios" class="form-label">Pedágios</label>
+                            <input type="number" step="0.01" class="form-control" id="pedagios" value="{{ carga.pedagios }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="outras_despesas" class="form-label">Outras Despesas</label>
+                            <input type="number" step="0.01" class="form-control" id="outras_despesas" value="{{ carga.outras_despesas }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="abastecimento_empresa" class="form-label">Abastecimento na Empresa</label>
+                            <input type="number" step="0.01" class="form-control" id="abastecimento_empresa" value="{{ carga.abastecimento_empresa }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="abastecimento_posto" class="form-label">Abastecimento no Posto</label>
+                            <input type="number" step="0.01" class="form-control" id="abastecimento_posto" value="{{ carga.abastecimento_posto }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="adiantamento" class="form-label">Adiantamento</label>
+                            <input type="number" step="0.01" class="form-control" id="adiantamento" value="{{ carga.adiantamento }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="valor_pagar" class="form-label">Valor a Pagar</label>
+                            <input type="number" step="0.01" class="form-control" id="valor_pagar" value="{{ carga.valor_pagar }}" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <button type="button" class="btn btn-secondary me-md-2" onclick="window.history.back()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="salvarCarga()">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Atualizar dia da semana automaticamente
+        const dataAbateInput = document.getElementById('data_abate');
+        const diaSemanaInput = document.getElementById('dia_semana');
+        
+        function atualizarDiaSemana() {
+            if (dataAbateInput.value) {
+                const data = new Date(dataAbateInput.value);
+                const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                diaSemanaInput.value = diasSemana[data.getDay()];
             }
         }
-    
+
+        dataAbateInput.addEventListener('change', atualizarDiaSemana);
+        atualizarDiaSemana();  // Atualizar ao carregar a página
+
         // Calcular KM rodados e valor do frete automaticamente
         document.getElementById('km_saida').addEventListener('input', calcularKmRodados);
         document.getElementById('km_chegada').addEventListener('input', calcularKmRodados);
         document.getElementById('valor_km').addEventListener('input', calcularValorFrete);
 
-        // Calcular quebra automaticamente
+        // Calcular quebra de peso automaticamente
         document.getElementById('peso_granja').addEventListener('input', calcularQuebra);
         document.getElementById('peso_frigorifico').addEventListener('input', calcularQuebra);
 
-        // Calcular valor a pagar automaticamente
-        const camposFinanceiros = ['valor_frete', 'pedagios', 'outras_despesas', 'abastecimento_empresa', 'abastecimento_posto', 'adiantamento'];
-        camposFinanceiros.forEach(campo => {
+        // Calcular valor a pagar
+        const camposValor = ['pedagios', 'outras_despesas', 'abastecimento_empresa', 'abastecimento_posto', 'adiantamento'];
+        camposValor.forEach(campo => {
             document.getElementById(campo).addEventListener('input', calcularValorPagar);
         });
 
-        function calcularKmRodados() {
-            const kmSaida = parseFloat(document.getElementById('km_saida').value) || 0;
-            const kmChegada = parseFloat(document.getElementById('km_chegada').value) || 0;
-            const kmRodados = kmChegada - kmSaida;
-            document.getElementById('km_rodados').value = kmRodados;
-            calcularValorFrete();
-        }
-
-        function calcularQuebra() {
-            const pesoGranja = parseFloat(document.getElementById('peso_granja').value) || 0;
-            const pesoFrigorifico = parseFloat(document.getElementById('peso_frigorifico').value) || 0;
+        // Função para controlar visibilidade do campo outro motorista
+        window.toggleOutroMotorista = function() {
+            const motoristaSelect = document.getElementById('motorista');
+            const outroMotoristaDiv = document.getElementById('outro-motorista-div');
+            const outroMotoristaInput = document.getElementById('motorista_outro');
             
-            if (pesoGranja > 0 && pesoFrigorifico > 0) {
-                const quebraPeso = pesoGranja - pesoFrigorifico;
-                const percentualQuebra = (quebraPeso / pesoGranja) * 100;
-                
-                document.getElementById('quebra_peso').value = quebraPeso.toFixed(2);
-                document.getElementById('percentual_quebra').value = percentualQuebra.toFixed(2);
+            if (motoristaSelect.value === 'outro') {
+                outroMotoristaDiv.style.display = 'block';
+                outroMotoristaInput.required = true;
             } else {
-                document.getElementById('quebra_peso').value = '';
-                document.getElementById('percentual_quebra').value = '';
+                outroMotoristaDiv.style.display = 'none';
+                outroMotoristaInput.required = false;
+                outroMotoristaInput.value = '';
             }
         }
+    });
 
-        function calcularValorPagar() {
-            const valorFrete = parseFloat(document.getElementById('valor_frete').value) || 0;
-            const pedagios = parseFloat(document.getElementById('pedagios').value) || 0;
-            const outrasDespesas = parseFloat(document.getElementById('outras_despesas').value) || 0;
-            const abastecimentoEmpresa = parseFloat(document.getElementById('abastecimento_empresa').value) || 0;
-            const abastecimentoPosto = parseFloat(document.getElementById('abastecimento_posto').value) || 0;
-            const adiantamento = parseFloat(document.getElementById('adiantamento').value) || 0;
+    function calcularKmRodados() {
+        const kmSaida = parseFloat(document.getElementById('km_saida').value) || 0;
+        const kmChegada = parseFloat(document.getElementById('km_chegada').value) || 0;
+        const kmRodados = Math.max(0, kmChegada - kmSaida);
+        document.getElementById('km_rodados').value = kmRodados.toFixed(2);
+        calcularValorFrete();
+    }
 
-            const valorPagar = valorFrete - pedagios - outrasDespesas - abastecimentoEmpresa - abastecimentoPosto - adiantamento;
-            document.getElementById('valor_pagar').value = valorPagar.toFixed(2);
-        }
+    function calcularQuebra() {
+        const pesoGranja = parseFloat(document.getElementById('peso_granja').value) || 0;
+        const pesoFrigorifico = parseFloat(document.getElementById('peso_frigorifico').value) || 0;
+        const quebraPeso = Math.max(0, pesoGranja - pesoFrigorifico);
+        const percentualQuebra = pesoGranja > 0 ? (quebraPeso / pesoGranja) * 100 : 0;
 
-        function calcularValorFrete() {
-            const kmRodados = parseFloat(document.getElementById('km_rodados').value) || 0;
-            const valorKm = parseFloat(document.getElementById('valor_km').value) || 0;
-            const valorFrete = kmRodados * valorKm;
-            document.getElementById('valor_frete').value = valorFrete.toFixed(2);
-            calcularValorPagar();
-        }
-    </script>
+        document.getElementById('quebra_peso').value = quebraPeso.toFixed(2);
+        document.getElementById('percentual_quebra').value = percentualQuebra.toFixed(2);
+    }
+
+    function calcularValorFrete() {
+        const kmRodados = parseFloat(document.getElementById('km_rodados').value) || 0;
+        const valorKm = parseFloat(document.getElementById('valor_km').value) || 0;
+        const valorFrete = kmRodados * valorKm;
+        document.getElementById('valor_frete').value = valorFrete.toFixed(2);
+        calcularValorPagar();
+    }
+
+    function calcularValorPagar() {
+        const valorFrete = parseFloat(document.getElementById('valor_frete').value) || 0;
+        const pedagios = parseFloat(document.getElementById('pedagios').value) || 0;
+        const outrasDespesas = parseFloat(document.getElementById('outras_despesas').value) || 0;
+        const abastecimentoEmpresa = parseFloat(document.getElementById('abastecimento_empresa').value) || 0;
+        const abastecimentoPosto = parseFloat(document.getElementById('abastecimento_posto').value) || 0;
+        const adiantamento = parseFloat(document.getElementById('adiantamento').value) || 0;
+
+        const valorPagar = valorFrete + pedagios + outrasDespesas - abastecimentoEmpresa - abastecimentoPosto - adiantamento;
+        document.getElementById('valor_pagar').value = valorPagar.toFixed(2);
+    }
+
+    function salvarCarga() {
+        const motoristaSelect = document.getElementById('motorista');
+        const outroMotoristaInput = document.getElementById('motorista_outro');
+        
+        const formData = {
+            numero_carga: document.getElementById('numero_carga').value,
+            tipo_ave: document.getElementById('tipo_ave').value,
+            quantidade_cargas: document.getElementById('quantidade_cargas').value,
+            ordem_carga: document.getElementById('ordem_carga').value,
+            data_abate: document.getElementById('data_abate').value,
+            dia_semana: document.getElementById('dia_semana').value,
+            agenciador: document.getElementById('agenciador').value,
+            motorista: motoristaSelect.value === 'outro' ? outroMotoristaInput.value : motoristaSelect.value,
+            transportadora: document.getElementById('transportadora').value,
+            placa_veiculo: document.getElementById('placa_veiculo').value,
+            km_saida: document.getElementById('km_saida').value,
+            km_chegada: document.getElementById('km_chegada').value,
+            km_rodados: document.getElementById('km_rodados').value,
+            valor_km: document.getElementById('valor_km').value,
+            valor_frete: document.getElementById('valor_frete').value,
+            status_frete: document.getElementById('status_frete').value,
+            produtor: document.getElementById('produtor').value,
+            uf_produtor: document.getElementById('uf_produtor').value,
+            numero_nfe: document.getElementById('numero_nfe').value,
+            data_nfe: document.getElementById('data_nfe').value,
+            numero_gta: document.getElementById('numero_gta').value,
+            data_gta: document.getElementById('data_gta').value,
+            peso_granja: document.getElementById('peso_granja').value,
+            peso_frigorifico: document.getElementById('peso_frigorifico').value,
+            quebra_peso: document.getElementById('quebra_peso').value,
+            percentual_quebra: document.getElementById('percentual_quebra').value,
+            motivo_alta_quebra: document.getElementById('motivo_alta_quebra').value,
+            caixas_vazias: document.getElementById('caixas_vazias').value,
+            quantidade_caixas: document.getElementById('quantidade_caixas').value,
+            pedagios: document.getElementById('pedagios').value,
+            outras_despesas: document.getElementById('outras_despesas').value,
+            abastecimento_empresa: document.getElementById('abastecimento_empresa').value,
+            abastecimento_posto: document.getElementById('abastecimento_posto').value,
+            adiantamento: document.getElementById('adiantamento').value,
+            valor_pagar: document.getElementById('valor_pagar').value
+        };
+
+        fetch(`/cargas/atualizar_carga/{{ carga.id }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Sucesso!',
+                    text: 'Carga atualizada com sucesso!',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/cargas/';
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Erro!',
+                    text: data.message || 'Erro ao atualizar a carga',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            Swal.fire({
+                title: 'Erro!',
+                text: 'Ocorreu um erro ao salvar as alterações',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        });
+    }
+</script>
 {% endblock %}

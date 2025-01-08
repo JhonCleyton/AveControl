@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from models.solicitacao import Solicitacao
 from models.carga import Carga
 from extensions import db
-from datetime import datetime
+import datetime
 
 solicitacoes_bp = Blueprint('solicitacoes', __name__)
 
@@ -115,14 +115,20 @@ def analisar_solicitacao(id):
         }), 403
         
     try:
-        data = request.json
-        status = data.get('status')  # 'aprovada' ou 'reprovada'
-        observacao = data.get('observacao')
-        
-        if not status:
+        data = request.get_json()
+        if not data:
             return jsonify({
                 'success': False,
-                'message': 'Status é obrigatório.'
+                'message': 'Dados não fornecidos.'
+            }), 400
+
+        status = data.get('status')
+        observacao = data.get('observacao', '')
+        
+        if not status or status not in ['aprovada', 'reprovada']:
+            return jsonify({
+                'success': False,
+                'message': 'Status inválido.'
             }), 400
             
         solicitacao = Solicitacao.query.get_or_404(id)
@@ -133,28 +139,47 @@ def analisar_solicitacao(id):
                 'success': False,
                 'message': 'Esta solicitação já foi analisada.'
             }), 400
-            
-        solicitacao.status = status
-        solicitacao.analisado_por_id = current_user.id
-        solicitacao.analisado_em = datetime.utcnow()
-        solicitacao.observacao_analise = observacao
-        
+
         # Se for uma solicitação de exclusão e foi aprovada
         if solicitacao.tipo == 'exclusao' and status == 'aprovada':
             carga = Carga.query.get(solicitacao.carga_id)
             if carga:
+                # Primeiro excluímos todas as solicitações relacionadas à carga
+                Solicitacao.query.filter(
+                    Solicitacao.carga_id == carga.id,
+                    Solicitacao.id != solicitacao.id
+                ).delete()
+                
+                # Depois excluímos a carga
                 db.session.delete(carga)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Solicitação analisada com sucesso!'
-        })
+                
+                # Por fim, excluímos a solicitação atual
+                db.session.delete(solicitacao)
+                
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Carga excluída com sucesso!'
+                })
+        else:
+            # Se não for exclusão ou foi reprovada, apenas atualizamos o status
+            solicitacao.status = status
+            solicitacao.analisado_por_id = current_user.id
+            solicitacao.analisado_em = datetime.datetime.utcnow()
+            solicitacao.observacao_analise = observacao
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Solicitação {status} com sucesso!'
+            })
         
     except Exception as e:
         db.session.rollback()
+        print(f"Erro ao analisar solicitação: {str(e)}")  # Log do erro
         return jsonify({
             'success': False,
-            'message': str(e)
+            'message': f'Erro ao analisar solicitação: {str(e)}'
         }), 400

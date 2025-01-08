@@ -1,5 +1,6 @@
 from extensions import db
 from datetime import datetime
+import pytz
 
 class TipoNotificacao:
     NOVA_CARGA = 'nova_carga'
@@ -14,7 +15,7 @@ class Notificacao(db.Model):
     tipo = db.Column(db.String(50), nullable=False)
     titulo = db.Column(db.String(100), nullable=False)
     mensagem = db.Column(db.Text, nullable=False)
-    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_criacao = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('America/Sao_Paulo')))
     lida = db.Column(db.Boolean, default=False)
     exibir_popup = db.Column(db.Boolean, default=False)
     

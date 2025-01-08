@@ -51,6 +51,14 @@ def marcar_todas_como_lidas():
     
     return jsonify({'success': True})
 
+@notificacoes_bp.route('/<int:id>/marcar_popup', methods=['POST'])
+@login_required
+def marcar_popup(id):
+    notificacao = Notificacao.query.get_or_404(id)
+    notificacao.popup_mostrado = True
+    db.session.commit()
+    return jsonify({'success': True})
+
 def notificar_nova_carga(carga):
     """Notifica usuários sobre nova carga"""
     # Notifica todos os usuários ativos

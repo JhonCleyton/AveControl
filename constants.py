@@ -1,16 +1,26 @@
 # Tipos de Ave
 TIPOS_AVE = [
     'FRANGO',
-    'GALINHA',
-    'PERU'
+    'GALINHA LEVE',
+    'GALINHA MATRIZ',
+    'GALINHA VERMELHA',
+    'GALO'
 ]
 
 # Lista de Motoristas
 MOTORISTAS = [
-    'MOTORISTA 1',
-    'MOTORISTA 2',
-    'MOTORISTA 3',
-    'OUTRO'
+    'Claudio Ferreira Salomão',
+    'Edimilton Silva Santos',
+    'Fabricio Santos de Sá',
+    'Gilson dos Santos Gonçalves',
+    'Lucielio dos Santos Bonfim',
+    'Sadraque Ramos Sales',
+    'Willian Cacio Cabral',
+    'Osvaldo Silva dos Santos',
+    'Carlos Lazaro',
+    'Antonio Marcos Castro',
+    'Adeilton Bispo Rosa',
+    'Igor Da Silva'
 ]
 
 # Lista de Transportadoras
@@ -50,4 +60,4 @@ ESTADOS_BRASIL = [
 ]
 
 # Número inicial para cargas
-NUMERO_INICIAL_CARGA = 1000
+NUMERO_INICIAL_CARGA = 5040

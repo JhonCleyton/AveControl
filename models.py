@@ -3,6 +3,7 @@ from datetime import datetime
 from pytz import UTC
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from utils.datetime_utils import get_current_time
 
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
@@ -258,6 +259,21 @@ class Producao(db.Model):
             self.aves_papo_cheio +
             self.outras_quebras
         )
+
+from utils.datetime_utils import get_current_time
+
+class HistoricoCarga(db.Model):
+    __tablename__ = 'historico_carga'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    carga_id = db.Column(db.Integer, db.ForeignKey('carga.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    acao = db.Column(db.String(255), nullable=False)
+    data_hora = db.Column(db.DateTime, nullable=False)
+    
+    # Relacionamentos
+    carga = db.relationship('Carga', backref=db.backref('historicos', lazy=True))
+    usuario = db.relationship('Usuario', backref=db.backref('historicos_carga', lazy=True))
 
 class Mensagens(db.Model):
     __tablename__ = 'mensagens'

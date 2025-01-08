@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Meu Perfil</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('perfil.atualizar_perfil') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Dados Básicos -->
+                        <div class="mb-4">
+                            <h5>Dados Básicos</h5>
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="nome" name="nome" value="{{ usuario.nome }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tipo" class="form-label">Tipo de Usuário</label>
+                                <input type="text" class="form-control" id="tipo" value="{{ usuario.tipo|title }}" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Alterar Senha -->
+                        <div class="mb-4">
+                            <h5>Alterar Senha</h5>
+                            <div class="mb-3">
+                                <label for="senha_atual" class="form-label">Senha Atual</label>
+                                <input type="password" class="form-control" id="senha_atual" name="senha_atual">
+                            </div>
+                            <div class="mb-3">
+                                <label for="nova_senha" class="form-label">Nova Senha</label>
+                                <input type="password" class="form-control" id="nova_senha" name="nova_senha">
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmar_senha" class="form-label">Confirmar Nova Senha</label>
+                                <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação de senha
+    const form = document.querySelector('form');
+    const senhaAtual = document.getElementById('senha_atual');
+    const novaSenha = document.getElementById('nova_senha');
+    const confirmarSenha = document.getElementById('confirmar_senha');
+
+    form.addEventListener('submit', function(e) {
+        // Se algum campo de senha está preenchido, todos devem estar
+        if (senhaAtual.value || novaSenha.value || confirmarSenha.value) {
+            if (!senhaAtual.value || !novaSenha.value || !confirmarSenha.value) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Para alterar a senha, preencha todos os campos de senha'
+                });
+                return;
+            }
+
+            if (novaSenha.value !== confirmarSenha.value) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'As senhas não coincidem'
+                });
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

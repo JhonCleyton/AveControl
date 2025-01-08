@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Histórico da Carga #{{ carga.numero_carga }}</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-3">Data/Hora</th>
+                            <th class="px-3">Usuário</th>
+                            <th class="px-3">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for historico in historicos %}
+                        <tr>
+                            <td class="px-3">{{ historico.data_hora.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                            <td class="px-3">{{ historico.usuario.nome }}</td>
+                            <td class="px-3">{{ historico.acao }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div>
+        <a href="{{ url_for('cargas.visualizar_carga', id=carga.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h2>Solicitações de Edição</h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Carga</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Motivo</th>
+                                    <th>Solicitado por</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="solicitacoes_table">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Aprovação -->
+<div class="modal fade" id="aprovarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aprovar Solicitação</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja aprovar esta solicitação de edição?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="aprovarSolicitacao()">Aprovar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Rejeição -->
+<div class="modal fade" id="rejeitarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rejeitar Solicitação</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="motivo_rejeicao">Motivo da Rejeição:</label>
+                    <textarea class="form-control" id="motivo_rejeicao" rows="3" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="rejeitarSolicitacao()">Rejeitar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Verificação -->
+<div class="modal fade" id="verificarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verificar Edição</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="observacoes_verificacao">Observações:</label>
+                    <textarea class="form-control" id="observacoes_verificacao" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="verificarEdicao()">Finalizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let solicitacaoSelecionada = null;
+
+function carregarSolicitacoes() {
+    fetch('/cargas/solicitacoes_edicao')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('solicitacoes_table');
+                tbody.innerHTML = '';
+                
+                data.solicitacoes.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${s.carga_numero}</td>
+                        <td>${s.tipo_solicitacao}</td>
+                        <td><span class="badge badge-${getBadgeClass(s.status)}">${s.status}</span></td>
+                        <td>${s.motivo}</td>
+                        <td>${s.solicitado_por}</td>
+                        <td>${s.solicitado_em}</td>
+                        <td>${getBotoesAcao(s)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar solicitações');
+        });
+}
+
+function getBadgeClass(status) {
+    switch (status) {
+        case 'pendente':
+            return 'warning';
+        case 'aprovada':
+            return 'success';
+        case 'rejeitada':
+            return 'danger';
+        case 'finalizada':
+            return 'info';
+        default:
+            return 'secondary';
+    }
+}
+
+function getBotoesAcao(solicitacao) {
+    if (solicitacao.status === 'pendente') {
+        return `
+            <button class="btn btn-sm btn-success" onclick="abrirModalAprovacao(${solicitacao.id})">
+                <i class="fas fa-check"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="abrirModalRejeicao(${solicitacao.id})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+    } else if (solicitacao.status === 'aprovada') {
+        return `
+            <button class="btn btn-sm btn-primary" onclick="abrirModalVerificacao(${solicitacao.id})">
+                <i class="fas fa-check-double"></i>
+            </button>
+        `;
+    }
+    return '';
+}
+
+function abrirModalAprovacao(id) {
+    solicitacaoSelecionada = id;
+    $('#aprovarModal').modal('show');
+}
+
+function abrirModalRejeicao(id) {
+    solicitacaoSelecionada = id;
+    document.getElementById('motivo_rejeicao').value = '';
+    $('#rejeitarModal').modal('show');
+}
+
+function abrirModalVerificacao(id) {
+    solicitacaoSelecionada = id;
+    document.getElementById('observacoes_verificacao').value = '';
+    $('#verificarModal').modal('show');
+}
+
+function aprovarSolicitacao() {
+    fetch(`/cargas/aprovar_edicao/${solicitacaoSelecionada}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#aprovarModal').modal('hide');
+            carregarSolicitacoes();
+        }
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao aprovar solicitação');
+    });
+}
+
+function rejeitarSolicitacao() {
+    const motivo = document.getElementById('motivo_rejeicao').value;
+    if (!motivo) {
+        alert('Por favor, informe o motivo da rejeição');
+        return;
+    }
+    
+    fetch(`/cargas/rejeitar_edicao/${solicitacaoSelecionada}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ motivo_rejeicao: motivo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#rejeitarModal').modal('hide');
+            carregarSolicitacoes();
+        }
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao rejeitar solicitação');
+    });
+}
+
+function verificarEdicao() {
+    const observacoes = document.getElementById('observacoes_verificacao').value;
+    
+    fetch(`/cargas/verificar_edicao/${solicitacaoSelecionada}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ observacoes: observacoes })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#verificarModal').modal('hide');
+            carregarSolicitacoes();
+        }
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao verificar edição');
+    });
+}
+
+// Carregar solicitações ao abrir a página
+document.addEventListener('DOMContentLoaded', carregarSolicitacoes);
+</script>
+{% endblock %}

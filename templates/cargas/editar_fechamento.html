@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h2>Editar Fechamento</h2>
+            
+            <!-- Buscar Carga -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="numero_carga">Número da Carga:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="numero_carga" placeholder="Digite o número da carga">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" onclick="buscarCarga()">Buscar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulário de Fechamento -->
+            <div id="form_fechamento" style="display: none;">
+                <form id="fechamentoForm" onsubmit="return salvarFechamento(event)">
+                    <input type="hidden" id="carga_id">
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Dados da Carga</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p><strong>Número da Carga:</strong> <span id="display_numero_carga"></span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>Tipo de Ave:</strong> <span id="display_tipo_ave"></span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><strong>Data de Abate:</strong> <span id="display_data_abate"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tratativas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Tratativas:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tratativas" id="tratativas_1" value="1" required>
+                                    <label class="form-check-label" for="tratativas_1">1 - Uma tratativa</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tratativas" id="tratativas_2" value="2">
+                                    <label class="form-check-label" for="tratativas_2">2 - Duas tratativas</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tratativa 1</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="tipo_fechamento_1">Tipo:</label>
+                                        <select class="form-control" id="tipo_fechamento_1" name="tipo_fechamento_1" required>
+                                            <option value="kg">KG</option>
+                                            <option value="unidade">Unidade</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="quantidade_1">Quantidade:</label>
+                                        <input type="number" step="0.01" class="form-control" id="quantidade_1" name="quantidade_1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="valor_unitario_1">Valor Unitário:</label>
+                                        <input type="number" step="0.01" class="form-control" id="valor_unitario_1" name="valor_unitario_1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="descontos_1">Descontos:</label>
+                                        <input type="number" step="0.01" class="form-control" id="descontos_1" name="descontos_1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="observacoes_1">Observações:</label>
+                                        <textarea class="form-control" id="observacoes_1" name="observacoes_1" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tratativa_2" style="display: none;">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Tratativa 2</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="tipo_fechamento_2">Tipo:</label>
+                                            <select class="form-control" id="tipo_fechamento_2" name="tipo_fechamento_2">
+                                                <option value="kg">KG</option>
+                                                <option value="unidade">Unidade</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="quantidade_2">Quantidade:</label>
+                                            <input type="number" step="0.01" class="form-control" id="quantidade_2" name="quantidade_2">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="valor_unitario_2">Valor Unitário:</label>
+                                            <input type="number" step="0.01" class="form-control" id="valor_unitario_2" name="valor_unitario_2">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="descontos_2">Descontos:</label>
+                                            <input type="number" step="0.01" class="form-control" id="descontos_2" name="descontos_2">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="observacoes_2">Observações:</label>
+                                            <textarea class="form-control" id="observacoes_2" name="observacoes_2" rows="2"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function buscarCarga() {
+    const numero_carga = document.getElementById('numero_carga').value;
+    
+    fetch(`/cargas/fechamento/buscar/${numero_carga}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('form_fechamento').style.display = 'block';
+                document.getElementById('carga_id').value = data.carga.id;
+                document.getElementById('display_numero_carga').textContent = data.carga.numero_carga;
+                document.getElementById('display_tipo_ave').textContent = data.carga.tipo_ave;
+                document.getElementById('display_data_abate').textContent = data.carga.data_abate;
+                
+                // Preencher dados de fechamento existentes
+                if (data.fechamento) {
+                    // Tratativas
+                    document.querySelector(`input[name="tratativas"][value="${data.fechamento.tratativas}"]`).checked = true;
+                    if (data.fechamento.tratativas === '2') {
+                        document.getElementById('tratativa_2').style.display = 'block';
+                    }
+                    
+                    // Tratativa 1
+                    document.getElementById('tipo_fechamento_1').value = data.fechamento.tipo_fechamento_1;
+                    document.getElementById('quantidade_1').value = data.fechamento.quantidade_1;
+                    document.getElementById('valor_unitario_1').value = data.fechamento.valor_unitario_1;
+                    document.getElementById('descontos_1').value = data.fechamento.descontos_1;
+                    document.getElementById('observacoes_1').value = data.fechamento.observacoes_1;
+                    
+                    // Tratativa 2
+                    if (data.fechamento.tratativas === '2') {
+                        document.getElementById('tipo_fechamento_2').value = data.fechamento.tipo_fechamento_2;
+                        document.getElementById('quantidade_2').value = data.fechamento.quantidade_2;
+                        document.getElementById('valor_unitario_2').value = data.fechamento.valor_unitario_2;
+                        document.getElementById('descontos_2').value = data.fechamento.descontos_2;
+                        document.getElementById('observacoes_2').value = data.fechamento.observacoes_2;
+                    }
+                }
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao buscar carga');
+        });
+}
+
+// Mostrar/ocultar segunda tratativa
+document.querySelectorAll('input[name="tratativas"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('tratativa_2').style.display = this.value === '2' ? 'block' : 'none';
+        
+        // Limpar campos da tratativa 2 se não estiver selecionada
+        if (this.value === '1') {
+            document.getElementById('tipo_fechamento_2').value = '';
+            document.getElementById('quantidade_2').value = '';
+            document.getElementById('valor_unitario_2').value = '';
+            document.getElementById('descontos_2').value = '';
+            document.getElementById('observacoes_2').value = '';
+        }
+    });
+});
+
+function salvarFechamento(event) {
+    event.preventDefault();
+    
+    const tratativas = document.querySelector('input[name="tratativas"]:checked').value;
+    
+    const formData = {
+        carga_id: document.getElementById('carga_id').value,
+        tratativas: tratativas,
+        tipo_fechamento_1: document.getElementById('tipo_fechamento_1').value,
+        quantidade_1: parseFloat(document.getElementById('quantidade_1').value),
+        valor_unitario_1: parseFloat(document.getElementById('valor_unitario_1').value),
+        descontos_1: parseFloat(document.getElementById('descontos_1').value),
+        observacoes_1: document.getElementById('observacoes_1').value
+    };
+    
+    if (tratativas === '2') {
+        formData.tipo_fechamento_2 = document.getElementById('tipo_fechamento_2').value;
+        formData.quantidade_2 = parseFloat(document.getElementById('quantidade_2').value);
+        formData.valor_unitario_2 = parseFloat(document.getElementById('valor_unitario_2').value);
+        formData.descontos_2 = parseFloat(document.getElementById('descontos_2').value);
+        formData.observacoes_2 = document.getElementById('observacoes_2').value;
+    }
+    
+    fetch('/cargas/fechamento/salvar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Fechamento salvo com sucesso!');
+            window.location.href = '/';
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar fechamento');
+    });
+    
+    return false;
+}
+</script>
+{% endblock %}

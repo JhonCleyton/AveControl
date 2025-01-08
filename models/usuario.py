@@ -2,6 +2,7 @@ from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.orm import relationship
 
 class TipoUsuario:
     GERENTE = 'gerente'
@@ -32,11 +33,21 @@ class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    senha_hash = db.Column(db.String(256), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)
+    tipo = db.Column(db.String(50), nullable=False)
+    senha_hash = db.Column(db.String(255), nullable=False)
     ativo = db.Column(db.Boolean, default=True)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     ultimo_acesso = db.Column(db.DateTime)
+
+    # Relacionamentos
+    historicos_carga = relationship('HistoricoCarga', 
+                                  back_populates='usuario',
+                                  primaryjoin="Usuario.id == HistoricoCarga.usuario_id",
+                                  cascade='all, delete-orphan')
+
+    @property
+    def is_gerente(self):
+        return self.tipo == TipoUsuario.GERENTE
 
     def set_senha(self, senha):
         self.senha_hash = generate_password_hash(senha)
@@ -67,3 +78,18 @@ class Usuario(UserMixin, db.Model):
         )
         usuario.set_senha(senha)
         return usuario
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self.id)
+
+    def __repr__(self):
+        return f'<Usuario {self.nome}>'

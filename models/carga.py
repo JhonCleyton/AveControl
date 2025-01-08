@@ -1,6 +1,9 @@
 from extensions import db
 from datetime import datetime
 from pytz import UTC
+from constants import TIPOS_AVE
+from enum import Enum
+from config import Config
 
 class Carga(db.Model):
     __tablename__ = 'cargas'
@@ -12,7 +15,7 @@ class Carga(db.Model):
     STATUS_CANCELADA = 'cancelada'
     
     id = db.Column(db.Integer, primary_key=True)
-    numero_carga = db.Column(db.String(20), unique=True, nullable=False)
+    numero_carga = db.Column(db.String(50), unique=True, nullable=False)
     tipo_ave = db.Column(db.String(50), nullable=False)
     quantidade_cargas = db.Column(db.Integer, nullable=False)
     ordem_carga = db.Column(db.String(10), nullable=False)
@@ -29,7 +32,11 @@ class Carga(db.Model):
     valor_km = db.Column(db.Float, default=0)
     valor_frete = db.Column(db.Float, default=0)
     status_frete = db.Column(db.String(50))
-    status = db.Column(db.String(50), default='pendente')  # pendente, em_andamento, concluida, cancelada
+    status = db.Column(db.String(50), default=STATUS_PENDENTE)
+    status_atualizado_em = db.Column(db.DateTime)
+    status_atualizado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    status_atualizado_por = db.relationship('Usuario', foreign_keys=[status_atualizado_por_id])
+    
     caixas_vazias = db.Column(db.Integer, default=0)
     quantidade_caixas = db.Column(db.Integer, default=0)
     produtor = db.Column(db.String(100))
@@ -57,6 +64,28 @@ class Carga(db.Model):
     autorizado_em = db.Column(db.DateTime)
     assinatura_autorizacao = db.Column(db.String(500))
     
+    # Campos de verificação
+    status_balanca = db.Column(db.String(20), default='pendente')  # pendente, em_verificacao, aprovado
+    status_producao = db.Column(db.String(20), default='pendente')  # pendente, em_verificacao, aprovado
+    status_fechamento = db.Column(db.String(20), default='pendente')  # pendente, em_verificacao, aprovado
+    
+    motivo_verificacao_balanca = db.Column(db.Text)
+    motivo_verificacao_producao = db.Column(db.Text)
+    motivo_verificacao_fechamento = db.Column(db.Text)
+    
+    data_verificacao_balanca = db.Column(db.DateTime)
+    data_verificacao_producao = db.Column(db.DateTime)
+    data_verificacao_fechamento = db.Column(db.DateTime)
+    
+    verificado_por_balanca_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', name='fk_verificado_por_balanca'))
+    verificado_por_producao_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', name='fk_verificado_por_producao'))
+    verificado_por_fechamento_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', name='fk_verificado_por_fechamento'))
+    
+    # Relacionamentos de verificação
+    verificado_por_balanca = db.relationship('Usuario', foreign_keys=[verificado_por_balanca_id])
+    verificado_por_producao = db.relationship('Usuario', foreign_keys=[verificado_por_producao_id])
+    verificado_por_fechamento = db.relationship('Usuario', foreign_keys=[verificado_por_fechamento_id])
+    
     # Metadados
     criado_em = db.Column(db.DateTime, default=datetime.now(UTC))
     atualizado_em = db.Column(db.DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
@@ -71,21 +100,11 @@ class Carga(db.Model):
     subcargas = db.relationship('SubCarga', backref='carga', lazy=True)
     producoes = db.relationship('Producao', backref='carga', lazy=True)
     fechamento = db.relationship('Fechamento', back_populates='carga', uselist=False)
-
-    def atualizar_status(self, novo_status):
-        """
-        Atualiza o status da carga e registra a data de atualização.
-        
-        Args:
-            novo_status (str): Novo status da carga (deve ser um dos status definidos nas constantes)
-        """
-        if novo_status in [self.STATUS_PENDENTE, self.STATUS_EM_ANDAMENTO, self.STATUS_CONCLUIDA, self.STATUS_CANCELADA]:
-            self.status = novo_status
-            self.atualizado_em = datetime.now(UTC)
-            return True
-        return False
+    historicos = db.relationship('HistoricoCarga', back_populates='carga', cascade='all, delete-orphan')
 
 class SubCarga(db.Model):
+    __tablename__ = 'subcargas'
+    
     id = db.Column(db.Integer, primary_key=True)
     carga_id = db.Column(db.Integer, db.ForeignKey('cargas.id'), nullable=False)
     numero_subcarga = db.Column(db.String(20))
@@ -100,18 +119,15 @@ class SubCarga(db.Model):
 
 class Producao(db.Model):
     __tablename__ = 'producao'
+    
     id = db.Column(db.Integer, primary_key=True)
     carga_id = db.Column(db.Integer, db.ForeignKey('cargas.id'))
     data_producao = db.Column(db.Date, nullable=False)
-    
-    # Contagem de Aves
     aves_granja = db.Column(db.Integer, nullable=False)
     aves_mortas = db.Column(db.Integer, nullable=False)
     aves_recebidas = db.Column(db.Integer, nullable=False)
     aves_contador = db.Column(db.Integer, nullable=False)
     aves_por_caixa = db.Column(db.Integer, nullable=False)
-    
-    # Avarias
     mortalidade_excesso = db.Column(db.Float, nullable=False, default=0)
     aves_molhadas_granja = db.Column(db.Float, nullable=False, default=0)
     aves_molhadas_chuva = db.Column(db.Float, nullable=False, default=0)
@@ -120,31 +136,45 @@ class Producao(db.Model):
     outras_quebras = db.Column(db.Float, nullable=False, default=0)
     descricao_quebras = db.Column(db.Text)
     total_avarias = db.Column(db.Float, nullable=False, default=0)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'carga_id': self.carga_id,
+            'data_producao': self.data_producao.strftime('%Y-%m-%d'),
+            'aves_granja': self.aves_granja,
+            'aves_mortas': self.aves_mortas,
+            'aves_recebidas': self.aves_recebidas,
+            'aves_contador': self.aves_contador,
+            'aves_por_caixa': self.aves_por_caixa,
+            'mortalidade_excesso': self.mortalidade_excesso,
+            'aves_molhadas_granja': self.aves_molhadas_granja,
+            'aves_molhadas_chuva': self.aves_molhadas_chuva,
+            'quebra_maus_tratos': self.quebra_maus_tratos,
+            'aves_papo_cheio': self.aves_papo_cheio,
+            'outras_quebras': self.outras_quebras,
+            'descricao_quebras': self.descricao_quebras,
+            'total_avarias': self.total_avarias
+        }
 
 class Fechamento(db.Model):
     __tablename__ = 'fechamentos'
     
     id = db.Column(db.Integer, primary_key=True)
     carga_id = db.Column(db.Integer, db.ForeignKey('cargas.id'), unique=True)
-    tratativas = db.Column(db.String(1), nullable=False)  # '1' ou '2'
-    
-    # Primeira tratativa
-    tipo_fechamento_1 = db.Column(db.String(10), nullable=False)  # 'unidade' ou 'kg'
+    tratativas = db.Column(db.String(1), nullable=False)
+    tipo_fechamento_1 = db.Column(db.String(10), nullable=False)
     quantidade_1 = db.Column(db.Float, nullable=False)
     valor_unitario_1 = db.Column(db.Float, nullable=False)
     descontos_1 = db.Column(db.Float, nullable=False, default=0)
     valor_total_1 = db.Column(db.Float, nullable=False)
     observacoes_1 = db.Column(db.Text)
-    
-    # Segunda tratativa (opcional)
     tipo_fechamento_2 = db.Column(db.String(10))
     quantidade_2 = db.Column(db.Float)
     valor_unitario_2 = db.Column(db.Float)
     descontos_2 = db.Column(db.Float, default=0)
     valor_total_2 = db.Column(db.Float)
     observacoes_2 = db.Column(db.Text)
-    
-    # Relacionamento com a carga
     carga = db.relationship('Carga', back_populates='fechamento', uselist=False)
     
     def to_dict(self):
@@ -169,30 +199,30 @@ class Fechamento(db.Model):
                 'valor_total_2': self.valor_total_2,
                 'observacoes_2': self.observacoes_2
             })
-        
+            
         return data
-
+    
     def update_from_dict(self, data):
         """Atualiza os campos do fechamento com os dados fornecidos"""
-        # Campos da primeira tratativa (obrigatórios)
-        self.tratativas = data['tratativas']
-        self.tipo_fechamento_1 = data['tipo_fechamento_1']
-        self.quantidade_1 = float(data['quantidade_1'])
-        self.valor_unitario_1 = float(data['valor_unitario_1'])
-        self.descontos_1 = float(data.get('descontos_1', 0))
-        self.valor_total_1 = float(data['valor_total_1'])
-        self.observacoes_1 = data.get('observacoes_1')
-
-        # Campos da segunda tratativa (opcionais)
-        if data['tratativas'] == '2':
-            self.tipo_fechamento_2 = data.get('tipo_fechamento_2')
-            self.quantidade_2 = float(data.get('quantidade_2', 0))
-            self.valor_unitario_2 = float(data.get('valor_unitario_2', 0))
-            self.descontos_2 = float(data.get('descontos_2', 0))
-            self.valor_total_2 = float(data.get('valor_total_2', 0))
-            self.observacoes_2 = data.get('observacoes_2')
+        self.tratativas = data.get('tratativas', self.tratativas)
+        self.tipo_fechamento_1 = data.get('tipo_fechamento_1', self.tipo_fechamento_1)
+        self.quantidade_1 = float(data.get('quantidade_1', self.quantidade_1))
+        self.valor_unitario_1 = float(data.get('valor_unitario_1', self.valor_unitario_1))
+        self.descontos_1 = float(data.get('descontos_1', self.descontos_1))
+        self.valor_total_1 = float(data.get('valor_total_1', self.valor_total_1))
+        self.observacoes_1 = data.get('observacoes_1', self.observacoes_1)
+        
+        if data.get('tratativas') == '2':
+            self.tipo_fechamento_2 = data.get('tipo_fechamento_2', self.tipo_fechamento_2)
+            self.quantidade_2 = float(data.get('quantidade_2', self.quantidade_2 or 0))
+            self.valor_unitario_2 = float(data.get('valor_unitario_2', self.valor_unitario_2 or 0))
+            self.descontos_2 = float(data.get('descontos_2', self.descontos_2 or 0))
+            self.valor_total_2 = float(data.get('valor_total_2', self.valor_total_2 or 0))
+            self.observacoes_2 = data.get('observacoes_2', self.observacoes_2)
 
 class ConfiguracaoFormulario(db.Model):
+    __tablename__ = 'configuracoes_formulario'
+    
     id = db.Column(db.Integer, primary_key=True)
     nome_campo = db.Column(db.String(100), nullable=False)
     tipo_campo = db.Column(db.String(50), nullable=False)
@@ -201,15 +231,16 @@ class ConfiguracaoFormulario(db.Model):
     opcoes = db.Column(db.Text)
 
 def criar_subcarga(carga, subcarga_data, i):
+    """Cria uma subcarga para a carga fornecida"""
     subcarga = SubCarga(
         carga_id=carga.id,
-        numero_subcarga=f"{str(carga.numero_carga)}.{str(i+1)}",
-        tipo_ave=subcarga_data.get('tipo_ave', ''),
-        produtor=subcarga_data.get('produtor', ''),
-        uf_produtor=subcarga_data.get('uf_produtor', ''),
-        numero_nfe=subcarga_data.get('numero_nfe', ''),
-        data_nfe=datetime.strptime(subcarga_data.get('data_nfe', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date() if subcarga_data.get('data_nfe') else None,
-        numero_gta=subcarga_data.get('numero_gta', ''),
-        data_gta=datetime.strptime(subcarga_data.get('data_gta', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date() if subcarga_data.get('data_gta') else None
+        numero_subcarga=f"{str(carga.numero_carga)}.{i}",  # Gerar número da subcarga
+        tipo_ave=subcarga_data.get('tipo_ave'),
+        produtor=subcarga_data.get('produtor'),
+        uf_produtor=subcarga_data.get('uf_produtor'),
+        numero_nfe=subcarga_data.get('numero_nfe'),
+        data_nfe=datetime.strptime(subcarga_data.get('data_nfe'), '%Y-%m-%d').date() if subcarga_data.get('data_nfe') else None,
+        numero_gta=subcarga_data.get('numero_gta'),
+        data_gta=datetime.strptime(subcarga_data.get('data_gta'), '%Y-%m-%d').date() if subcarga_data.get('data_gta') else None
     )
     return subcarga

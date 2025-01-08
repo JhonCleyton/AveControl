@@ -49,78 +49,78 @@
     <div class="row mb-4">
         <!-- Card 1 - Quantidade de Cargas -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-blue">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-primary mb-3">
+                    <h5 class="card-title text-white mb-3">
                         <i class="fas fa-truck"></i> Total de Cargas
                     </h5>
-                    <h2 class="display-4">{{ resumo.total_cargas }}</h2>
-                    <p class="text-muted">no período selecionado</p>
+                    <h2 class="display-4 text-white">{{ resumo.total_cargas }}</h2>
+                    <p class="text-white-50">no período selecionado</p>
                 </div>
             </div>
         </div>
 
         <!-- Card 2 - Abastecimento Médio -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-green">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-success mb-3">
+                    <h5 class="card-title text-white mb-3">
                         <i class="fas fa-gas-pump"></i> Abastecimento Médio
                     </h5>
-                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_medio) }}</h2>
-                    <p class="text-muted">por carga</p>
+                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.abastecimento_medio).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
+                    <p class="text-white-50">por carga</p>
                 </div>
             </div>
         </div>
 
         <!-- Card 3 - Abastecimento Total -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-purple">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-danger mb-3">
+                    <h5 class="card-title text-white mb-3">
                         <i class="fas fa-gas-pump"></i> Abastecimento Total
                     </h5>
-                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_total) }}</h2>
-                    <p class="text-muted">no período</p>
+                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.abastecimento_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
+                    <p class="text-white-50">no período</p>
                 </div>
             </div>
         </div>
 
         <!-- Card 4 - Frete Médio -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-orange">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-info mb-3">
+                    <h5 class="card-title text-white mb-3">
                         <i class="fas fa-money-bill-wave"></i> Frete Médio
                     </h5>
-                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.frete_medio) }}</h2>
-                    <p class="text-muted">por carga</p>
+                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.frete_medio).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
+                    <p class="text-white-50">por carga</p>
                 </div>
             </div>
         </div>
 
         <!-- Card 5 - Frete Total -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-indigo">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-warning mb-3">
-                        <i class="fas fa-money-bill-wave"></i> Frete Total
+                    <h5 class="card-title text-white mb-3">
+                        <i class="fas fa-money-check-alt"></i> Frete Total
                     </h5>
-                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.frete_total) }}</h2>
-                    <p class="text-muted">no período</p>
+                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.frete_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
+                    <p class="text-white-50">no período</p>
                 </div>
             </div>
         </div>
 
         <!-- Card 6 - Valor a Pagar Total -->
         <div class="col-md-4 mb-4">
-            <div class="card card-3d">
+            <div class="card card-gradient-red">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-success mb-3">
-                        <i class="fas fa-hand-holding-usd"></i> Valor a Pagar Total
+                    <h5 class="card-title text-white mb-3">
+                        <i class="fas fa-file-invoice-dollar"></i> Valor a Pagar Total
                     </h5>
-                    <h2 class="display-4">R$ {{ "%.2f"|format(resumo.valor_pagar_total) }}</h2>
-                    <p class="text-muted">no período</p>
+                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.valor_pagar_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
+                    <p class="text-white-50">no período</p>
                 </div>
             </div>
         </div>
@@ -327,6 +327,80 @@
     .fa, .fas {
         display: none !important;
     }
+}
+
+/* Estilos dos cards com gradientes */
+.card-gradient-blue {
+    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(33, 147, 176, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-green {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-purple {
+    background: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(131, 77, 155, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-orange {
+    background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(241, 39, 17, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-indigo {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(75, 108, 183, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-red {
+    background: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(203, 45, 62, 0.3);
+    transition: all 0.3s ease;
+}
+
+.card-gradient-blue:hover,
+.card-gradient-green:hover,
+.card-gradient-purple:hover,
+.card-gradient-orange:hover,
+.card-gradient-indigo:hover,
+.card-gradient-red:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+.display-4 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 1rem 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Ajustes para valores monetários */
+.display-4[data-currency]:before {
+    content: "R$ ";
+    font-size: 0.7em;
+    vertical-align: top;
+    margin-right: 0.2em;
 }
 </style>
 

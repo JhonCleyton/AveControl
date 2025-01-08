@@ -27,9 +27,14 @@ def index():
         # Query base
         query = Carga.query
         
+        # Debug: Verificar se há cargas da ELEEN TRANSPORTES
+        eleen_count = Carga.query.filter(Carga.transportadora.ilike('%ELEEN%')).count()
+        print(f"[Relatórios] Total de cargas da ELEEN (qualquer variação): {eleen_count}")
+        
         # Aplicar filtros
         if current_user.tipo == 'transportadora':
-            query = query.filter(Carga.transportadora == current_user.nome)
+            query = query.filter(Carga.transportadora == 'Ellen Transportes')
+            print(f"[Relatórios] Filtrando para usuário transportadora. Query: {str(query)}")
         elif transportadora:
             query = query.filter(Carga.transportadora == transportadora)
             
@@ -40,10 +45,16 @@ def index():
             
         # Buscar cargas
         cargas = query.order_by(Carga.data_abate).all()
+        print(f"[Relatórios] Total de cargas encontradas: {len(cargas)}")
+        if len(cargas) > 0:
+            print(f"[Relatórios] Primeira carga: {cargas[0].numero_carga} - {cargas[0].transportadora}")
         
         # Buscar lista de transportadoras para o filtro
-        transportadoras = Carga.query.with_entities(Carga.transportadora).distinct().order_by(Carga.transportadora).all()
-        transportadoras = [t[0] for t in transportadoras if t[0]]
+        if current_user.tipo == 'transportadora':
+            transportadoras = ['Ellen Transportes']
+        else:
+            transportadoras = Carga.query.with_entities(Carga.transportadora).distinct().order_by(Carga.transportadora).all()
+            transportadoras = [t[0] for t in transportadoras if t[0]]
         
         # Calcular métricas
         total_cargas = len(cargas)
@@ -138,7 +149,7 @@ def imprimir():
         
         # Aplicar filtros
         if current_user.tipo == 'transportadora':
-            query = query.filter(Carga.transportadora == current_user.nome)
+            query = query.filter(Carga.transportadora == 'Ellen Transportes')
         elif transportadora:
             query = query.filter(Carga.transportadora == transportadora)
             

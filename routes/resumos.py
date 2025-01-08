@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from models import Carga
 from utils import permissao_resumos
@@ -12,25 +12,38 @@ resumos_bp = Blueprint('resumos', __name__)
 @permissao_resumos
 def index():
     try:
-        # Pegar transportadora do filtro, se houver
+        # Pegar parâmetros dos filtros
         transportadora = request.args.get('transportadora')
+        data_inicial = request.args.get('data_inicial')
+        data_final = request.args.get('data_final')
         
         # Query base
         query = Carga.query
         
-        # Se for usuário transportadora, mostrar apenas suas cargas
+        # Se for usuário transportadora, sempre filtrar por Ellen Transportes
         if current_user.tipo == 'transportadora':
-            query = query.filter(Carga.transportadora == current_user.nome)
-        # Se houver filtro de transportadora
+            query = query.filter(Carga.transportadora == 'Ellen Transportes')
+        # Se houver filtro de transportadora e não for usuário transportadora
         elif transportadora:
             query = query.filter(Carga.transportadora == transportadora)
+            
+        # Aplicar filtros de data
+        if data_inicial:
+            data_inicial_obj = datetime.strptime(data_inicial, '%Y-%m-%d')
+            query = query.filter(Carga.data_abate >= data_inicial_obj)
+        if data_final:
+            data_final_obj = datetime.strptime(data_final, '%Y-%m-%d')
+            query = query.filter(Carga.data_abate <= data_final_obj)
             
         # Buscar todas as cargas ordenadas por data de abate
         cargas = query.order_by(desc(Carga.data_abate)).all()
         
         # Buscar lista de transportadoras para o filtro
-        transportadoras = Carga.query.with_entities(Carga.transportadora).distinct().order_by(Carga.transportadora).all()
-        transportadoras = [t[0] for t in transportadoras if t[0]]  # Remover None/vazios
+        if current_user.tipo == 'transportadora':
+            transportadoras = ['Ellen Transportes']
+        else:
+            transportadoras = Carga.query.with_entities(Carga.transportadora).distinct().order_by(Carga.transportadora).all()
+            transportadoras = [t[0] for t in transportadoras if t[0]]
         
         # Calcular totais
         total_fretes = sum(carga.valor_frete or 0 for carga in cargas)
@@ -43,7 +56,9 @@ def index():
         resumo = {
             'cargas': cargas,
             'transportadoras': transportadoras,
-            'transportadora_selecionada': transportadora,
+            'transportadora_selecionada': transportadora or 'Ellen Transportes' if current_user.tipo == 'transportadora' else transportadora,
+            'data_inicial': data_inicial,
+            'data_final': data_final,
             'totais': {
                 'fretes': total_fretes,
                 'pedagios': total_pedagios,
@@ -56,17 +71,5 @@ def index():
         
         return render_template('resumos/index.html', resumo=resumo)
     except Exception as e:
-        print(f"Erro ao carregar resumos: {str(e)}")
-        return render_template('resumos/index.html', resumo={
-            'cargas': [], 
-            'transportadoras': [],
-            'transportadora_selecionada': None,
-            'totais': {
-                'fretes': 0,
-                'pedagios': 0,
-                'outras_despesas': 0,
-                'abastecimento': 0,
-                'adiantamentos': 0,
-                'pagar': 0
-            }
-        })
+        flash(f'Erro ao carregar resumo: {str(e)}', 'danger')
+        return redirect(url_for('main.index'))

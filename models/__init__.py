@@ -1,9 +1,10 @@
 from extensions import db
 from models.usuario import Usuario, TipoUsuario
-from models.carga import Carga, SubCarga, Producao, Fechamento, ConfiguracaoFormulario
-from models.solicitacao import Solicitacao
+from models.carga import Carga, SubCarga, ConfiguracaoFormulario, Producao, Fechamento
 from models.notificacao import Notificacao, TipoNotificacao
 from models.mensagem import Mensagem, TipoMensagem
+from models.historico import HistoricoCarga
+from models.solicitacao import Solicitacao, TipoSolicitacao, StatusSolicitacao, SetorSolicitacao
 
 __all__ = [
     'db',
@@ -11,12 +12,16 @@ __all__ = [
     'TipoUsuario',
     'Carga',
     'SubCarga',
+    'ConfiguracaoFormulario',
     'Producao',
     'Fechamento',
-    'ConfiguracaoFormulario',
-    'Solicitacao',
     'Notificacao',
     'TipoNotificacao',
     'Mensagem',
-    'TipoMensagem'
+    'TipoMensagem',
+    'HistoricoCarga',
+    'Solicitacao',
+    'TipoSolicitacao',
+    'StatusSolicitacao',
+    'SetorSolicitacao'
 ]

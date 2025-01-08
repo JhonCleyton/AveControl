@@ -81,21 +81,17 @@
             <div class="col-md-4">
                 <div class="mb-3">
                     <label for="motorista" class="form-label">Motorista</label>
-                    <select class="form-select" id="motorista">
+                    <select class="form-select" id="motorista" onchange="toggleOutroMotorista()">
                         <option value="">Selecione...</option>
-                        <option value="Claudio Ferreira Salomão">Claudio Ferreira Salomão</option>
-                        <option value="Edimilton Silva Santos">Edimilton Silva Santos</option>
-                        <option value="Fabricio Santos de Sá">Fabricio Santos de Sá</option>
-                        <option value="Gilson dos Santos Gonçalves">Gilson dos Santos Gonçalves</option>
-                        <option value="Lucielio dos Santos Bonfim">Lucielio dos Santos Bonfim</option>
-                        <option value="Sadraque Ramos Sales">Sadraque Ramos Sales</option>
-                        <option value="Willian Cacio Cabral">Willian Cacio Cabral</option>
+                        {% for motorista in motoristas %}
+                        <option value="{{ motorista }}">{{ motorista }}</option>
+                        {% endfor %}
                         <option value="outro">Outro</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="mb-3">
+                <div class="mb-3" id="outro-motorista-div" style="display: none;">
                     <label for="motorista_outro" class="form-label">Outro Motorista</label>
                     <input type="text" class="form-control" id="motorista_outro">
                 </div>
@@ -402,11 +398,9 @@
                     <label class="form-label">Tipo de Ave</label>
                     <select class="form-select subcarga-tipo-ave">
                         <option value="">Selecione...</option>
-                        <option value="Frango">Frango</option>
-                        <option value="Galinha Leve">Galinha Leve</option>
-                        <option value="Galinha Matriz">Galinha Matriz</option>
-                        <option value="Galinha Vermelha">Galinha Vermelha</option>
-                        <option value="Galo">Galo</option>
+                        {% for tipo in tipos_ave %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
@@ -417,73 +411,45 @@
                 </div>
             </div>
         </div>
+        <div class="row">
             <div class="col-md-4">
                 <div class="mb-3">
                     <label class="form-label">UF do Produtor</label>
                     <select class="form-select subcarga-uf">
                         <option value="">Selecione...</option>
-                        <option value="AC">Acre</option>
-                        <option value="AL">Alagoas</option>
-                        <option value="AP">Amapá</option>
-                        <option value="AM">Amazonas</option>
-                        <option value="BA">Bahia</option>
-                        <option value="CE">Ceará</option>
-                        <option value="DF">Distrito Federal</option>
-                        <option value="ES">Espírito Santo</option>
-                        <option value="GO">Goiás</option>
-                        <option value="MA">Maranhão</option>
-                        <option value="MT">Mato Grosso</option>
-                        <option value="MS">Mato Grosso do Sul</option>
-                        <option value="MG">Minas Gerais</option>
-                        <option value="PA">Pará</option>
-                        <option value="PB">Paraíba</option>
-                        <option value="PR">Paraná</option>
-                        <option value="PE">Pernambuco</option>
-                        <option value="PI">Piauí</option>
-                        <option value="RJ">Rio de Janeiro</option>
-                        <option value="RN">Rio Grande do Norte</option>
-                        <option value="RS">Rio Grande do Sul</option>
-                        <option value="RO">Rondônia</option>
-                        <option value="RR">Roraima</option>
-                        <option value="SC">Santa Catarina</option>
-                        <option value="SP">São Paulo</option>
-                        <option value="SE">Sergipe</option>
-                        <option value="TO">Tocantins</option>
+                        {% for estado in estados_brasil %}
+                        <option value="{{ estado }}">{{ estado }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label class="form-label">Número NFe</label>
+                    <input type="text" class="form-control subcarga-nfe">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label class="form-label">Data NFe</label>
+                    <input type="date" class="form-control subcarga-data-nfe">
+                </div>
+            </div>
         </div>
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">
-                    <label class="form-label">Número da NFe</label>
-                    <input type="text" class="form-control subcarga-nfe" required>
+                    <label class="form-label">Número GTA</label>
+                    <input type="text" class="form-control subcarga-gta">
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="mb-3">
-                    <label class="form-label">Data da NFe</label>
-                    <input type="date" class="form-control subcarga-data-nfe" required>
+                    <label class="form-label">Data GTA</label>
+                    <input type="date" class="form-control subcarga-data-gta">
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Número da GTA</label>
-                    <input type="text" class="form-control subcarga-gta" required>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Data da GTA</label>
-                    <input type="date" class="form-control subcarga-data-gta" required>
-                </div>
-            </div>
-        </div>
-        <button type="button" class="btn btn-danger btn-sm" onclick="removerSubcarga(this)">
-            <i class="fas fa-trash"></i> Remover Subcarga
-        </button>
     </div>
 </template>
 {% endblock %}
@@ -498,7 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const diaSemanaInput = document.getElementById('dia_semana');
     
     dataAbateInput.addEventListener('change', function() {
-        const data = new Date(this.value);
+        const [ano, mes, dia] = this.value.split('-');
+        const data = new Date(ano, mes - 1, dia);
         const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
         diaSemanaInput.value = diasSemana[data.getDay()];
     });
@@ -559,11 +526,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('quebra_peso').value = quebraPeso.toFixed(2);
             document.getElementById('percentual_quebra').value = percentualQuebra.toFixed(2);
             
-            // Verificar se a quebra está acima de 2%
+            // Verificar se a quebra está acima de 5%
             const divMotivoQuebra = document.getElementById('div_motivo_quebra');
             const motivoAltaQuebra = document.getElementById('motivo_alta_quebra');
             
-            if (percentualQuebra > 2) {
+            if (percentualQuebra > 5) {
                 divMotivoQuebra.style.display = 'block';
                 motivoAltaQuebra.required = true;
             } else {
@@ -691,8 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data_abate: document.getElementById('data_abate')?.value || hoje,
             dia_semana: document.getElementById('dia_semana')?.value || '',
             agenciador: document.getElementById('agenciador')?.value || '',
-            motorista: document.getElementById('motorista')?.value || '',
-            motorista_outro: document.getElementById('motorista_outro')?.value || '',
+            motorista: document.getElementById('motorista')?.value === 'outro' ? document.getElementById('motorista_outro')?.value : document.getElementById('motorista')?.value,
             transportadora: document.getElementById('transportadora')?.value || '',
             placa_veiculo: placaSelect.style.display === 'none' ? placaInput.value : placaSelect.value,
             km_saida: getNumericValue('km_saida'),
@@ -777,15 +743,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return camposPrincipaisVazios;
         }
 
+        // Verificar campos obrigatórios das subcargas
         const subcargas = document.querySelectorAll('.subcarga-item');
         const camposSubcargasVazios = Array.from(subcargas).filter(subcarga => {
             return [
+                '.subcarga-tipo-ave',
                 '.subcarga-produtor',
-                '.subcarga-uf',
-                '.subcarga-nfe',
-                '.subcarga-data-nfe',
-                '.subcarga-gta',
-                '.subcarga-data-gta'
+                '.subcarga-uf'
             ].some(seletor => {
                 const elemento = subcarga.querySelector(seletor);
                 return !elemento || !elemento.value.trim();
@@ -886,6 +850,61 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    window.limparCargas = function() {
+        Swal.fire({
+            title: 'Atenção!',
+            text: 'Isso irá excluir TODAS as cargas e reiniciar a contagem. Tem certeza?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir tudo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('/cargas/limpar_cargas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Sucesso!', data.message, 'success')
+                        .then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Erro!', data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    Swal.fire('Erro!', 'Erro ao limpar cargas', 'error');
+                });
+            }
+        });
+    }
+
+    window.toggleOutroMotorista = function() {
+        const motoristaSelect = document.getElementById('motorista');
+        const outroMotoristaDiv = document.getElementById('outro-motorista-div');
+        const outroMotoristaInput = document.getElementById('motorista_outro');
+        
+        if (motoristaSelect.value === 'outro') {
+            outroMotoristaDiv.style.display = 'block';
+            outroMotoristaInput.required = true;
+        } else {
+            outroMotoristaDiv.style.display = 'none';
+            outroMotoristaInput.required = false;
+            outroMotoristaInput.value = '';
+        }
+    }
+
+    // Chamar a função no carregamento para garantir estado inicial correto
+    toggleOutroMotorista();
 });
 </script>
 {% endblock %}

@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .watermark {
+        position: fixed;
+        top: 60%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.6;
+        z-index: -1;
+        width: 900px;
+    }
+</style>
+
+<img src="{{ url_for('static', filename='logo1.jpg') }}" alt="AveControl Logo" class="watermark">
+
 <div class="row">
     <div class="col-12">
-        <h2>Bem-vindo ao Sistema de Gerenciamento de Carga</h2>
+        <h2>Bem-vindo ao AveControl</h2>
         <p>Selecione uma opção no menu acima para começar.</p>
     </div>
 </div>

@@ -71,8 +71,12 @@ def permissao_desenvolvedor(f):
 def permissao_resumos(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.tipo not in ['gerente', 'diretoria', 'transportadora', 'financeiro']:
-            flash('Acesso não autorizado', 'error')
+        if not current_user.is_authenticated:
+            flash('Por favor, faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login', next=request.url))
+        tipos_permitidos = ['gerente', 'diretoria', 'financeiro', 'transportadora']
+        if current_user.tipo not in tipos_permitidos:
+            flash('Você não tem permissão para acessar esta página.', 'danger')
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)
     return decorated_function

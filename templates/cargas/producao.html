@@ -116,6 +116,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    let dadosOriginais = null;
+    let temProducao = false;
+
     // Verificar se há número de carga na URL
     const urlParams = new URLSearchParams(window.location.search);
     const numeroCargaParam = urlParams.get('carga');
@@ -146,6 +149,55 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     document.getElementById('carga_id').value = data.carga.id;
+                    
+                    // Preencher os campos se houver dados de produção
+                    if (data.carga.producao) {
+                        const producao = data.carga.producao;
+                        temProducao = true;
+                        
+                        // Salvar dados originais para comparação
+                        dadosOriginais = {
+                            aves_granja: producao.aves_granja,
+                            aves_mortas: producao.aves_mortas,
+                            aves_recebidas: producao.aves_recebidas,
+                            aves_contador: producao.aves_contador,
+                            aves_por_caixa: producao.aves_por_caixa,
+                            mortalidade_excesso: producao.mortalidade_excesso,
+                            aves_molhadas_granja: producao.aves_molhadas_granja,
+                            aves_molhadas_chuva: producao.aves_molhadas_chuva,
+                            quebra_maus_tratos: producao.quebra_maus_tratos,
+                            aves_papo_cheio: producao.aves_papo_cheio,
+                            outras_quebras: producao.outras_quebras,
+                            descricao_quebras: producao.descricao_quebras
+                        };
+                        
+                        // Preencher campos de contagem
+                        document.getElementById('aves_granja').value = producao.aves_granja;
+                        document.getElementById('aves_mortas').value = producao.aves_mortas;
+                        document.getElementById('aves_recebidas').value = producao.aves_recebidas;
+                        document.getElementById('aves_contador').value = producao.aves_contador;
+                        document.getElementById('aves_por_caixa').value = producao.aves_por_caixa;
+                        
+                        // Preencher campos de avarias
+                        document.getElementById('mortalidade_excesso').value = producao.mortalidade_excesso;
+                        document.getElementById('aves_molhadas_granja').value = producao.aves_molhadas_granja;
+                        document.getElementById('aves_molhadas_chuva').value = producao.aves_molhadas_chuva;
+                        document.getElementById('quebra_maus_tratos').value = producao.quebra_maus_tratos;
+                        document.getElementById('aves_papo_cheio').value = producao.aves_papo_cheio;
+                        document.getElementById('outras_quebras').value = producao.outras_quebras;
+                        document.getElementById('descricao_quebras').value = producao.descricao_quebras;
+                        
+                        // Calcular total de avarias
+                        calcularTotalAvarias();
+                    } else {
+                        // Limpar os campos se não houver dados
+                        temProducao = false;
+                        dadosOriginais = null;
+                        document.getElementById('formProducao').reset();
+                        document.getElementById('carga_id').value = data.carga.id;
+                        calcularTotalAvarias();
+                    }
+                    
                     Swal.fire({
                         icon: 'success',
                         title: 'Carga Encontrada',
@@ -166,6 +218,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: 'Erro',
                     text: 'Erro ao buscar a carga'
                 });
+            });
+    }
+
+    // Função para verificar se houve alterações nos dados
+    function verificarAlteracoes() {
+        if (!temProducao || !dadosOriginais) return false;
+        
+        const campos = [
+            'aves_granja',
+            'aves_mortas',
+            'aves_recebidas',
+            'aves_contador',
+            'aves_por_caixa',
+            'mortalidade_excesso',
+            'aves_molhadas_granja',
+            'aves_molhadas_chuva',
+            'quebra_maus_tratos',
+            'aves_papo_cheio',
+            'outras_quebras',
+            'descricao_quebras'
+        ];
+
+        for (const campo of campos) {
+            const valorAtual = document.getElementById(campo).value;
+            const valorOriginal = dadosOriginais[campo];
+            
+            // Converter para o mesmo tipo antes de comparar
+            if (campo === 'descricao_quebras') {
+                if (valorAtual !== valorOriginal) return true;
+            } else {
+                if (parseFloat(valorAtual) !== parseFloat(valorOriginal)) return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // Função para verificar se tem solicitação aprovada
+    function verificarSolicitacaoAprovada(cargaId) {
+        return fetch(`/cargas/verificar_solicitacao/${cargaId}?setor=producao`)
+            .then(response => response.json())
+            .then(data => {
+                return data.aprovada;
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                return false;
             });
     }
 
@@ -198,35 +297,88 @@ document.addEventListener('DOMContentLoaded', function() {
     calcularTotalAvarias();
 
     // Formulário submit
-    document.getElementById('formProducao').addEventListener('submit', function(e) {
+    document.getElementById('formProducao').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
-        if (!document.getElementById('carga_id').value) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: 'Por favor, primeiro busque uma carga'
-            });
-            return;
+
+        // Se tem produção e houve alterações, verificar se pode editar
+        if (temProducao && verificarAlteracoes()) {
+            const cargaId = document.getElementById('carga_id').value;
+            
+            // Verificar se tem solicitação aprovada
+            const temAprovacao = await verificarSolicitacaoAprovada(cargaId);
+            
+            if (!temAprovacao) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atenção',
+                    text: 'Esta produção já existe. Você precisa solicitar autorização ao gerente para fazer alterações.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Solicitar Edição',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Enviar solicitação de edição
+                        const data = {
+                            setor: 'producao',
+                            motivo: 'Solicitação de edição dos dados de produção'
+                        };
+                        
+                        fetch(`/cargas/solicitar_edicao/${cargaId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCsrfToken()
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Solicitação Enviada',
+                                    text: 'Sua solicitação de edição foi enviada ao gerente. Aguarde a aprovação.',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    // Redirecionar para a visualização da carga
+                                    window.location.href = `/cargas/visualizar/${cargaId}`;
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erro',
+                                    text: data.message || 'Erro ao enviar solicitação'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Erro',
+                                text: 'Erro ao enviar solicitação'
+                            });
+                        });
+                    }
+                });
+                return;
+            }
         }
 
-        // Coletar todos os dados do formulário
-        const formData = {};
-        const form = this;
-        Array.from(form.elements).forEach(element => {
-            if (element.name) {
-                formData[element.name] = element.value;
-            }
+        // Se não tem produção, não houve alterações, ou tem aprovação, salvar normalmente
+        const formData = new FormData(this);
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
         });
 
-        // Enviar dados via fetch
         fetch('/cargas/producao/salvar', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCsrfToken()
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(data => {
@@ -234,18 +386,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Sucesso',
-                    text: 'Produção salva com sucesso!',
-                    confirmButtonText: 'OK'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = `/cargas/visualizar/${formData.carga_id}`;
-                    }
+                    text: 'Dados de produção salvos com sucesso!'
+                }).then(() => {
+                    // Recarregar os dados após salvar
+                    buscarCargaProducao();
                 });
             } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro',
-                    text: data.message || 'Erro ao salvar produção'
+                    text: data.message || 'Erro ao salvar dados de produção'
                 });
             }
         })
@@ -254,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
-                text: 'Erro ao salvar produção'
+                text: 'Erro ao salvar dados de produção'
             });
         });
     });
