@@ -279,5 +279,5 @@ python run.py
 
 <div align="center">
   <p> 2025 JC Bytes - Solução em Tecnologia. Todos os direitos reservados.</p>
-  <p>Desenvolvido por <a href="https://github.com/JhonCleyton">Jhon Cleyton</a> com e dedicação</p>
+  <p>Desenvolvido por <a href="https://github.com/JhonCleyton">Jhon Cleyton</a> </p>
 </div>
