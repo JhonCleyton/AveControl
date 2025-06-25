@@ -1,14 +1,23 @@
 {% extends "base.html" %}
+
+{% block title %}Perfil{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/manual.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4>Meu Perfil</h4>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Coluna do Perfil -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-user-circle"></i> Meu Perfil</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('perfil.atualizar_perfil') }}">
+                    <form method="POST" action="{{ url_for('perfil.perfil_view') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <!-- Dados Básicos -->
@@ -45,48 +54,185 @@
                             </div>
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <!-- Preferências -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h4><i class="fas fa-cog"></i> Preferências</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="tema" class="form-label">Tema</label>
+                                    <select class="form-select" id="tema" name="tema">
+                                        <option value="claro" {% if usuario.tema == 'claro' %}selected{% endif %}>Claro</option>
+                                        <option value="escuro" {% if usuario.tema == 'escuro' %}selected{% endif %}>Escuro</option>
+                                    </select>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="notif_email" id="notif_email" {% if usuario.notif_email %}checked{% endif %}>
+                                    <label class="form-check-label" for="notif_email">
+                                        Receber notificações por e-mail
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
+
+        <!-- Coluna do Manual e Fluxograma -->
+        <div class="col-md-8">
+            {% include 'perfil/links_uteis.html' %}
+            <!-- Manual do Usuário -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-book"></i> Manual do Usuário</h4>
+                    <div>
+                        <button class="btn btn-light btn-sm" onclick="toggleManual()">
+                            <i class="fas fa-expand-alt"></i> Expandir
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body manual-preview">
+                    {{ manual_html|safe }}
+                </div>
+            </div>
+
+            <!-- Links Úteis -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-link"></i> Links Úteis</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('fluxograma.fluxograma') }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-project-diagram me-2"></i>
+                            <div>
+                                <h6 class="mb-0">Fluxograma do Sistema</h6>
+                                <small class="text-muted">Visualize o fluxo completo do sistema</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% include 'perfil/downloads.html' %}
+        </div>
     </div>
 </div>
 
+<!-- Modal para Manual Completo -->
+<div class="modal fade" id="modalManual" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-book"></i> Manual do Usuário
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="manual-completo"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Mermaid.js (se necessário para o fluxograma) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Validação de senha
-    const form = document.querySelector('form');
+// Dados do usuário
+const userData = {
+    tipo: "{{ usuario.tipo }}",
+    nome: "{{ usuario.nome }}",
+    email: "{{ usuario.email }}"
+};
+
+// Função para mostrar o manual completo
+function toggleManual() {
+    const modal = new bootstrap.Modal(document.getElementById('modalManual'));
+    const manualContent = document.getElementById('manual-completo');
+    
+    fetch(`/api/manual/${userData.tipo}`)
+        .then(response => response.text())
+        .then(content => {
+            manualContent.innerHTML = content;
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar manual:', error);
+            Swal.fire('Erro', 'Não foi possível carregar o manual', 'error');
+        });
+}
+
+// Inicialização do Mermaid (se necessário)
+if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base'
+    });
+}
+
+// Configuração inicial do Mermaid
+mermaid.initialize({
+    theme: 'default',
+    themeVariables: {
+        primaryColor: '#3498db',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#2980b9',
+        lineColor: '#2c3e50',
+        secondaryColor: '#2ecc71',
+        tertiaryColor: '#e74c3c'
+    },
+    flowchart: {
+        curve: 'basis',
+        padding: 15
+    }
+});
+
+// Validação de senha
+document.querySelector('form').addEventListener('submit', function(e) {
     const senhaAtual = document.getElementById('senha_atual');
     const novaSenha = document.getElementById('nova_senha');
     const confirmarSenha = document.getElementById('confirmar_senha');
 
-    form.addEventListener('submit', function(e) {
-        // Se algum campo de senha está preenchido, todos devem estar
-        if (senhaAtual.value || novaSenha.value || confirmarSenha.value) {
-            if (!senhaAtual.value || !novaSenha.value || !confirmarSenha.value) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro',
-                    text: 'Para alterar a senha, preencha todos os campos de senha'
-                });
-                return;
-            }
-
-            if (novaSenha.value !== confirmarSenha.value) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro',
-                    text: 'As senhas não coincidem'
-                });
-                return;
-            }
+    if (senhaAtual.value || novaSenha.value || confirmarSenha.value) {
+        if (!senhaAtual.value || !novaSenha.value || !confirmarSenha.value) {
+            e.preventDefault();
+            Swal.fire('Erro', 'Para alterar a senha, preencha todos os campos de senha', 'error');
+            return;
         }
+
+        if (novaSenha.value !== confirmarSenha.value) {
+            e.preventDefault();
+            Swal.fire('Erro', 'As senhas não coincidem', 'error');
+            return;
+        }
+    }
+});
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa tooltips
+    const tooltips = document.querySelectorAll('[data-tooltip]');
+    tooltips.forEach(tooltip => {
+        new bootstrap.Tooltip(tooltip);
     });
+
+    // Inicializa o Mermaid
+    mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+
+    // Aplica tema escuro se configurado
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
 });
 </script>
 {% endblock %}

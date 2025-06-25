@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Análise de Custos{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.2s;
+        margin-bottom: 1rem;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .metric-card {
+        border-left: 4px solid #4e73df;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .metric-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .variation-positive {
+        color: #1cc88a;
+    }
+    .variation-negative {
+        color: #e74a3b;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Dashboard de Análise de Custos</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active">Análise de Custos</li>
+    </ol>
+
+    <!-- Filtros de Data -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="data_inicio">Data Início:</label>
+                                <input type="date" class="form-control" id="data_inicio">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="data_fim">Data Fim:</label>
+                                <input type="date" class="form-control" id="data_fim">
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-primary" onclick="aplicarFiltros()">
+                                <i class="fas fa-filter"></i> Aplicar Filtros
+                            </button>
+                            <button class="btn btn-secondary ml-2" onclick="limparFiltros()">
+                                <i class="fas fa-undo"></i> Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Gerais -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <h6 class="metric-label">Total de Cargas (Mês Atual)</h6>
+                    <div class="metric-value" id="total-cargas">-</div>
+                    <div class="metric-variation" id="var-cargas"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <h6 class="metric-label">Custo Médio por KM</h6>
+                    <div class="metric-value" id="custo-medio-km">-</div>
+                    <div class="metric-variation" id="var-custo-km"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <h6 class="metric-label">Total em Fretes</h6>
+                    <div class="metric-value" id="total-fretes">-</div>
+                    <div class="metric-variation" id="var-fretes"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card h-100">
+                <div class="card-body">
+                    <h6 class="metric-label">Preço da Ave</h6>
+                    <div class="metric-value" id="total-fechamentos">-</div>
+                    <div class="metric-variation" id="var-fechamentos"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mt-4">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Tendência de Custos (Últimos 6 Meses)
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="tendenciaCustosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Distribuição de Custos
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="distribuicaoCustosChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Custo por Quilômetro (Últimos 6 Meses)
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="custoKmChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Funções de formatação
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+    };
+
+    const formatNumber = (value) => {
+        return new Intl.NumberFormat('pt-BR').format(value);
+    };
+
+    const formatPercentage = (value) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'percent',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }).format(value / 100);
+    };
+
+    const calcularVariacao = (atual, anterior) => {
+        if (!anterior) return 0;
+        return ((atual - anterior) / anterior) * 100;
+    };
+
+    // Função para obter datas dos filtros
+    const getFiltros = () => {
+        return {
+            data_inicio: document.getElementById('data_inicio').value || null,
+            data_fim: document.getElementById('data_fim').value || null
+        };
+    };
+
+    // Função para limpar filtros
+    const limparFiltros = () => {
+        document.getElementById('data_inicio').value = '';
+        document.getElementById('data_fim').value = '';
+        atualizarDashboard();
+    };
+
+    // Função para aplicar filtros
+    const aplicarFiltros = () => {
+        atualizarDashboard();
+    };
+
+    // Função para atualizar todo o dashboard
+    const atualizarDashboard = async () => {
+        await Promise.all([
+            atualizarMetricas(),
+            atualizarGraficos()
+        ]);
+    };
+
+    const atualizarMetricas = async () => {
+        try {
+            const filtros = getFiltros();
+            const queryParams = new URLSearchParams(filtros).toString();
+            const response = await fetch('/analise-custos/api/metricas-gerais?' + queryParams);
+            const { dados } = await response.json();
+
+            // Atualizar cards
+            document.getElementById('total-cargas').textContent = formatNumber(dados.mes_atual.total_cargas);
+            document.getElementById('custo-medio-km').textContent = formatCurrency(dados.mes_atual.custo_medio_km);
+            document.getElementById('total-fretes').textContent = formatCurrency(dados.mes_atual.total_frete);
+            document.getElementById('total-fechamentos').textContent = formatCurrency(dados.mes_atual.total_fechamento);
+
+            // Calcular e exibir variações
+            const varCargas = calcularVariacao(dados.mes_atual.total_cargas, dados.mes_anterior.total_cargas);
+            const varCustoKm = calcularVariacao(dados.mes_atual.custo_medio_km, dados.mes_anterior.custo_medio_km);
+            const varFretes = calcularVariacao(dados.mes_atual.total_frete, dados.mes_anterior.total_frete);
+            const varFechamentos = calcularVariacao(dados.mes_atual.total_fechamento, dados.mes_anterior.total_fechamento);
+
+            document.getElementById('var-cargas').innerHTML = `
+                <span class="${varCargas >= 0 ? 'variation-positive' : 'variation-negative'}">
+                    ${varCargas >= 0 ? '↑' : '↓'} ${Math.abs(varCargas).toFixed(1)}%
+                </span>`;
+            document.getElementById('var-custo-km').innerHTML = `
+                <span class="${varCustoKm >= 0 ? 'variation-negative' : 'variation-positive'}">
+                    ${varCustoKm >= 0 ? '↑' : '↓'} ${Math.abs(varCustoKm).toFixed(1)}%
+                </span>`;
+            document.getElementById('var-fretes').innerHTML = `
+                <span class="${varFretes >= 0 ? 'variation-negative' : 'variation-positive'}">
+                    ${varFretes >= 0 ? '↑' : '↓'} ${Math.abs(varFretes).toFixed(1)}%
+                </span>`;
+            document.getElementById('var-fechamentos').innerHTML = `
+                <span class="${varFechamentos >= 0 ? 'variation-positive' : 'variation-negative'}">
+                    ${varFechamentos >= 0 ? '↑' : '↓'} ${Math.abs(varFechamentos).toFixed(1)}%
+                </span>`;
+        } catch (error) {
+            console.error('Erro ao carregar métricas:', error);
+        }
+    };
+
+    const atualizarGraficos = async () => {
+        try {
+            const filtros = getFiltros();
+            const queryParams = new URLSearchParams(filtros).toString();
+
+            // Carregar dados de tendências
+            const responseTendencias = await fetch('/analise-custos/api/tendencias-mensais?' + queryParams);
+            const { dados: dataTendencias } = await responseTendencias.json();
+
+            // Gráfico de Tendências
+            const ctxTendencias = document.getElementById('tendenciaCustosChart').getContext('2d');
+            if (window.chartTendencias) {
+                window.chartTendencias.destroy();
+            }
+            window.chartTendencias = new Chart(ctxTendencias, {
+                type: 'line',
+                data: {
+                    labels: dataTendencias.map(d => d.mes),
+                    datasets: [{
+                        label: 'Frete Total',
+                        data: dataTendencias.map(d => d.total_frete),
+                        borderColor: '#4e73df',
+                        tension: 0.1
+                    }, {
+                        label: 'Carregamento',
+                        data: dataTendencias.map(d => d.total_carregamento),
+                        borderColor: '#1cc88a',
+                        tension: 0.1
+                    }, {
+                        label: 'Comissão',
+                        data: dataTendencias.map(d => d.total_comissao),
+                        borderColor: '#f6c23e',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de Custo por KM
+            const ctxCustoKm = document.getElementById('custoKmChart').getContext('2d');
+            if (window.chartCustoKm) {
+                window.chartCustoKm.destroy();
+            }
+            window.chartCustoKm = new Chart(ctxCustoKm, {
+                type: 'bar',
+                data: {
+                    labels: dataTendencias.map(d => d.mes),
+                    datasets: [{
+                        label: 'Custo por KM',
+                        data: dataTendencias.map(d => d.custo_medio_km),
+                        backgroundColor: '#4e73df'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Custo/KM: ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Carregar dados de distribuição
+            const responseDistribuicao = await fetch('/analise-custos/api/distribuicao-custos?' + queryParams);
+            const { dados: dataDistribuicao } = await responseDistribuicao.json();
+
+            // Calcular médias percentuais
+            const mediaPercentuais = dataDistribuicao.reduce((acc, curr) => {
+                return {
+                    frete: acc.frete + (curr.percentual_frete / dataDistribuicao.length),
+                    carregamento: acc.carregamento + (curr.percentual_carregamento / dataDistribuicao.length),
+                    comissao: acc.comissao + (curr.percentual_comissao / dataDistribuicao.length)
+                };
+            }, { frete: 0, carregamento: 0, comissao: 0 });
+
+            // Gráfico de Distribuição
+            const ctxDistribuicao = document.getElementById('distribuicaoCustosChart').getContext('2d');
+            if (window.chartDistribuicao) {
+                window.chartDistribuicao.destroy();
+            }
+            window.chartDistribuicao = new Chart(ctxDistribuicao, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Frete', 'Carregamento', 'Comissão'],
+                    datasets: [{
+                        data: [
+                            mediaPercentuais.frete,
+                            mediaPercentuais.carregamento,
+                            mediaPercentuais.comissao
+                        ],
+                        backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + formatPercentage(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar gráficos:', error);
+        }
+    };
+
+    // Inicializar dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+        atualizarDashboard();
+    });
+</script>
+{% endblock %}

@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <script>
     // Variáveis globais
-    let tipoSolicitacaoAtual = null;
-    const cargaId = {{ carga.id }};
+    var tipoSolicitacaoAtual = null;
+    var cargaId = {{ carga.id }};
+    var solicitacaoEmAndamento = false;
 
     // Funções
     function getCsrfToken() {
@@ -11,11 +13,16 @@
     }
 
     function solicitarEdicao(tipo) {
+        // Evita múltiplos cliques
+        if (solicitacaoEmAndamento) {
+            return;
+        }
+
         tipoSolicitacaoAtual = tipo;
         document.getElementById('motivo_edicao').value = '';
         
         // Atualizar o texto do tipo de edição
-        let tipoTexto = '';
+        var tipoTexto = '';
         switch(tipo) {
             case 'balanca':
                 tipoTexto = 'Balança';
@@ -32,12 +39,17 @@
         document.getElementById('tipoEdicaoTexto').innerText = tipoTexto;
         
         // Mostrar o modal usando Bootstrap 5
-        const modal = new bootstrap.Modal(document.getElementById('solicitarEdicaoModal'));
+        var modal = new bootstrap.Modal(document.getElementById('solicitarEdicaoModal'));
         modal.show();
     }
 
     function enviarSolicitacao() {
-        const motivo = document.getElementById('motivo_edicao').value;
+        // Evita múltiplos envios
+        if (solicitacaoEmAndamento) {
+            return;
+        }
+
+        var motivo = document.getElementById('motivo_edicao').value;
         if (!motivo) {
             Swal.fire({
                 icon: 'error',
@@ -47,44 +59,68 @@
             return;
         }
 
+        // Marca que há uma solicitação em andamento
+        solicitacaoEmAndamento = true;
+
+        // Desabilita o botão de envio
+        var btnEnviar = document.querySelector('#solicitarEdicaoModal .btn-primary');
+        if (btnEnviar) {
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+        }
+
+        // Obter o CSRF token do meta tag
+        var csrfToken = getCsrfToken();
+        
+        // Criar o FormData
+        var formData = new FormData();
+        formData.append('motivo', motivo);
+        formData.append('setor', tipoSolicitacaoAtual);
+        formData.append('csrf_token', csrfToken);
+
         fetch(`/cargas/solicitar_edicao/${cargaId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({
-                setor: tipoSolicitacaoAtual,
-                tipo: 'edicao',
-                motivo: motivo
-            })
+            body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Sucesso',
-                    text: data.message
-                }).then(() => {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('solicitarEdicaoModal'));
-                    modal.hide();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro',
-                    text: data.message
+        .then(function(response) {
+            if (!response.ok) {
+                return response.json().then(function(data) {
+                    throw new Error(data.erro || 'Erro ao enviar solicitação');
                 });
             }
+            return response.json();
         })
-        .catch(error => {
+        .then(function(data) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso',
+                text: data.mensagem
+            }).then(function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('solicitarEdicaoModal'));
+                modal.hide();
+                window.location.href = '/cargas/listar_cargas';
+            });
+        })
+        .catch(function(error) {
             console.error('Erro:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
-                text: 'Ocorreu um erro ao enviar a solicitação'
+                text: error.message || 'Ocorreu um erro ao enviar a solicitação'
             });
+        })
+        .finally(function() {
+            // Reseta o estado de solicitação em andamento
+            solicitacaoEmAndamento = false;
+            
+            // Reabilita o botão de envio
+            if (btnEnviar) {
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = 'Enviar';
+            }
         });
     }
 
@@ -96,27 +132,29 @@
             showCancelButton: true,
             confirmButtonText: 'Sim, aprovar',
             cancelButtonText: 'Cancelar'
-        }).then((result) => {
+        }).then(function(result) {
             if (result.isConfirmed) {
                 fetch(`/cargas/aprovar_nota/${id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
+                        'X-CSRF-TOKEN': getCsrfToken()
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
                     if (data.success) {
                         Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => {
+                        .then(function() {
                             window.location.reload();
                         });
                     } else {
                         Swal.fire('Erro!', data.message, 'error');
                     }
                 })
-                .catch(error => {
+                .catch(function(error) {
                     console.error('Erro:', error);
                     Swal.fire('Erro!', 'Erro ao aprovar nota', 'error');
                 });
@@ -124,43 +162,70 @@
         });
     }
 
-    function autorizarNota(id) {
+    function autorizarNota() {
         Swal.fire({
             title: 'Autorizar Nota',
             html: `
-                <input type="password" id="senha" class="swal2-input" placeholder="Digite sua senha">
-                <input type="text" id="assinatura" class="swal2-input" placeholder="Digite sua assinatura">
+                <div class="form-group">
+                    <label for="senha">Senha:</label>
+                    <input type="password" id="senha" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="assinatura">Assinatura:</label>
+                    <input type="text" id="assinatura" class="form-control" required>
+                </div>
             `,
-            focusConfirm: false,
             showCancelButton: true,
             confirmButtonText: 'Autorizar',
             cancelButtonText: 'Cancelar',
-            preConfirm: () => {
-                const senha = document.getElementById('senha').value;
-                const assinatura = document.getElementById('assinatura').value;
+            preConfirm: function() {
+                var senha = document.getElementById('senha').value;
+                var assinatura = document.getElementById('assinatura').value;
+                
                 if (!senha || !assinatura) {
-                    Swal.showValidationMessage('Senha e assinatura são obrigatórias');
+                    Swal.showValidationMessage('Preencha todos os campos');
+                    return false;
                 }
-                return { senha, assinatura };
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`/cargas/autorizar_nota/${id}`, {
+                
+                var formData = new FormData();
+                formData.append('senha', senha);
+                formData.append('assinatura', assinatura);
+                formData.append('csrf_token', getCsrfToken());
+                
+                fetch('/cargas/autorizar_nota/{{ carga.id }}', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRFToken': getCsrfToken()
                     },
-                    body: JSON.stringify(result.value)
+                    body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
                     if (data.success) {
-                        Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => location.reload());
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(function() {
+                            window.location.reload();
+                        });
                     } else {
-                        Swal.fire('Erro!', data.message, 'error');
+                        Swal.fire({
+                            title: 'Erro!',
+                            text: data.message,
+                            icon: 'error'
+                        });
                     }
+                })
+                .catch(function(error) {
+                    console.error('Erro:', error);
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: 'Erro ao autorizar nota',
+                        icon: 'error'
+                    });
                 });
             }
         });
@@ -171,12 +236,81 @@
             title: 'Solicitar Revisão',
             html: `
                 <div class="mb-3">
-                    <label class="form-label">Tipo de Solicitação</label>
-                    <select id="tipo" class="form-select">
-                        <option value="revisao">Revisão</option>
-                        <option value="exclusao">Exclusão</option>
+                    <label class="form-label">Setor Responsável</label>
+                    <select id="setor" class="form-select">
+                        <option value="balanca">Balança</option>
+                        <option value="fechamento">Fechamento</option>
+                        <option value="producao">Produção</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Motivo</label>
+                    <textarea id="motivo" class="form-control" rows="3" placeholder="Descreva o motivo da revisão"></textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar',
+            width: '600px',
+            preConfirm: function() {
+                var setor = document.getElementById('setor').value;
+                var motivo = document.getElementById('motivo').value;
+                if (!setor || !motivo) {
+                    Swal.showValidationMessage('Todos os campos são obrigatórios');
+                    return false;
+                }
+                return { setor, motivo };
+            }
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                fetch(`/cargas/solicitar_revisao/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        setor: result.value.setor,
+                        motivo: result.value.motivo
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: data.message,
+                            allowOutsideClick: false
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: data.message
+                        });
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Erro:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: error.message
+                    });
+                });
+            }
+        });
+    }
+
+    function solicitarExclusao(id) {
+        Swal.fire({
+            title: 'Solicitar Exclusão',
+            html: `
                 <div class="mb-3">
                     <label class="form-label">Setor Responsável</label>
                     <select id="setor" class="form-select">
@@ -187,40 +321,63 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Motivo</label>
-                    <textarea id="motivo" class="form-control" rows="3" placeholder="Descreva o motivo da solicitação"></textarea>
+                    <textarea id="motivo" class="form-control" rows="3" placeholder="Descreva o motivo da exclusão"></textarea>
                 </div>
             `,
             showCancelButton: true,
             confirmButtonText: 'Enviar',
             cancelButtonText: 'Cancelar',
             width: '600px',
-            preConfirm: () => {
-                const tipo = document.getElementById('tipo').value;
-                const setor = document.getElementById('setor').value;
-                const motivo = document.getElementById('motivo').value;
-                if (!tipo || !setor || !motivo) {
-                    Swal.showValidationMessage('Por favor, preencha todos os campos');
+            preConfirm: function() {
+                var setor = document.getElementById('setor').value;
+                var motivo = document.getElementById('motivo').value;
+                if (!setor || !motivo) {
+                    Swal.showValidationMessage('Todos os campos são obrigatórios');
+                    return false;
                 }
-                return { tipo, setor, motivo };
+                return { setor, motivo };
             }
-        }).then((result) => {
+        }).then(function(result) {
             if (result.isConfirmed) {
-                fetch(`/solicitacoes/solicitar_revisao/${id}`, {
+                fetch(`/cargas/solicitar_exclusao/${id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
+                        'X-CSRF-TOKEN': getCsrfToken()
                     },
-                    body: JSON.stringify(result.value)
+                    body: JSON.stringify({
+                        setor: result.value.setor,
+                        motivo: result.value.motivo
+                    })
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
                     if (data.success) {
-                        Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => location.reload());
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: data.message,
+                            allowOutsideClick: false
+                        }).then(function() {
+                            location.reload();
+                        });
                     } else {
-                        Swal.fire('Erro!', data.message, 'error');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: data.message
+                        });
                     }
+                })
+                .catch(function(error) {
+                    console.error('Erro:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: error.message
+                    });
                 });
             }
         });
@@ -235,67 +392,32 @@
             showCancelButton: true,
             confirmButtonText: 'Solicitar',
             cancelButtonText: 'Cancelar',
-            inputValidator: (value) => {
+            inputValidator: function(value) {
                 if (!value) {
                     return 'Você precisa escrever um motivo!'
                 }
             }
-        }).then((result) => {
+        }).then(function(result) {
             if (result.isConfirmed) {
                 fetch(`/cargas/solicitar_verificacao/${id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
+                        'X-CSRF-TOKEN': getCsrfToken()
                     },
                     body: JSON.stringify({
                         motivo: result.value
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => location.reload());
-                    } else {
-                        Swal.fire('Erro!', data.message, 'error');
-                    }
-                });
-            }
-        });
-    }
-
-    function solicitarExclusao(id) {
-        Swal.fire({
-            title: 'Solicitar Exclusão',
-            input: 'textarea',
-            inputLabel: 'Motivo da exclusão',
-            inputPlaceholder: 'Digite o motivo da exclusão...',
-            showCancelButton: true,
-            confirmButtonText: 'Solicitar',
-            cancelButtonText: 'Cancelar',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'Você precisa escrever um motivo!'
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`/cargas/solicitar_exclusao/${id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
-                    body: JSON.stringify({
-                        motivo: result.value
-                    })
+                .then(function(response) {
+                    return response.json();
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(function(data) {
                     if (data.success) {
                         Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => location.reload());
+                        .then(function() {
+                            location.reload();
+                        });
                     } else {
                         Swal.fire('Erro!', data.message, 'error');
                     }
@@ -305,19 +427,21 @@
     }
 
     function solicitarVerificacaoBalanca(id) {
-        const motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
+        var motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
         if (motivo === null) return;
 
         fetch(`/cargas/solicitar_verificacao_balanca/${id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             },
             body: JSON.stringify({ motivo })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -325,26 +449,28 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao solicitar verificação');
         });
     }
 
     function solicitarVerificacaoProducao(id) {
-        const motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
+        var motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
         if (motivo === null) return;
 
         fetch(`/cargas/solicitar_verificacao_producao/${id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             },
             body: JSON.stringify({ motivo })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -352,26 +478,28 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao solicitar verificação');
         });
     }
 
     function solicitarVerificacaoFechamento(id) {
-        const motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
+        var motivo = prompt('Por favor, informe o motivo da solicitação de verificação:');
         if (motivo === null) return;
 
         fetch(`/cargas/solicitar_verificacao_fechamento/${id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             },
             body: JSON.stringify({ motivo })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -379,7 +507,7 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao solicitar verificação');
         });
@@ -392,11 +520,13 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -404,7 +534,7 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao aprovar verificação');
         });
@@ -417,11 +547,13 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -429,7 +561,7 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao aprovar verificação');
         });
@@ -442,11 +574,13 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 alert(data.message);
                 location.reload();
@@ -454,25 +588,27 @@
                 alert('Erro: ' + data.message);
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             alert('Erro ao aprovar verificação');
         });
     }
 
     function atualizarStatus() {
-        const novoStatus = document.getElementById('statusCarga').value;
+        var novoStatus = document.getElementById('statusCarga').value;
         
         fetch(`/cargas/atualizar_status/${cargaId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRF-TOKEN': getCsrfToken()
             },
             body: JSON.stringify({ status: novoStatus })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 Swal.fire({
                     icon: 'success',
@@ -480,7 +616,7 @@
                     text: 'Status atualizado com sucesso',
                     showConfirmButton: false,
                     timer: 1500
-                }).then(() => {
+                }).then(function() {
                     // Recarrega a página para atualizar todas as informações
                     window.location.reload();
                 });
@@ -492,7 +628,7 @@
                 });
             }
         })
-        .catch(error => {
+        .catch(function(error) {
             console.error('Erro:', error);
             Swal.fire({
                 icon: 'error',
@@ -741,62 +877,9 @@
                 <i class="fas fa-print"></i> Imprimir
             </button>
             
-            {% if current_user.tipo == 'balanca' %}
-                {% if carga.status_balanca == 'pendente' %}
-                    <button onclick="solicitarVerificacaoBalanca({{ carga.id }})" class="btn btn-warning">
-                        <i class="fas fa-search"></i> Solicitar Verificação
-                    </button>
-                {% endif %}
-                {% if carga.status_balanca == 'aprovado' %}
-                    <a href="{{ url_for('cargas.editar_carga', id=carga.id) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                {% endif %}
-            {% endif %}
-
-            {% if current_user.tipo == 'producao' %}
-                {% if carga.status_producao == 'pendente' %}
-                    <button onclick="solicitarVerificacaoProducao({{ carga.id }})" class="btn btn-warning">
-                        <i class="fas fa-search"></i> Solicitar Verificação
-                    </button>
-                {% endif %}
-                {% if carga.status_producao == 'aprovado' %}
-                    <a href="{{ url_for('cargas.editar_producao', id=carga.id) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar Produção
-                    </a>
-                {% endif %}
-            {% endif %}
-
-            {% if current_user.tipo == 'fechamento' %}
-                {% if carga.status_fechamento == 'pendente' %}
-                    <button onclick="solicitarVerificacaoFechamento({{ carga.id }})" class="btn btn-warning">
-                        <i class="fas fa-search"></i> Solicitar Verificação
-                    </button>
-                {% endif %}
-                {% if carga.status_fechamento == 'aprovado' %}
-                    <a href="{{ url_for('cargas.editar_fechamento', id=carga.id) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar Fechamento
-                    </a>
-                {% endif %}
-            {% endif %}
-
-            {% if current_user.tipo == 'gerente' %}
-                {% if carga.status_balanca == 'em_verificacao' %}
-                    <button onclick="aprovarVerificacaoBalanca({{ carga.id }})" class="btn btn-success">
-                        <i class="fas fa-check"></i> Aprovar Verificação Balança
-                    </button>
-                {% endif %}
-                {% if carga.status_producao == 'em_verificacao' %}
-                    <button onclick="aprovarVerificacaoProducao({{ carga.id }})" class="btn btn-success">
-                        <i class="fas fa-check"></i> Aprovar Verificação Produção
-                    </button>
-                {% endif %}
-                {% if carga.status_fechamento == 'em_verificacao' %}
-                    <button onclick="aprovarVerificacaoFechamento({{ carga.id }})" class="btn btn-success">
-                        <i class="fas fa-check"></i> Aprovar Verificação Fechamento
-                    </button>
-                {% endif %}
-            {% endif %}
+            <button class="btn btn-primary" onclick="solicitarEdicao('balanca')">
+                <i class="fas fa-edit"></i> Solicitar Edição
+            </button>
         </div>
     </div>
 
@@ -815,6 +898,7 @@
                 <button class="btn btn-primary btn-sm" onclick="atualizarStatus()">
                     <i class="fas fa-save"></i> Salvar
                 </button>
+                <a href="{{ url_for('cargas.listar_cargas') }}" class="btn btn-secondary">Voltar</a>    
             </div>
             {% endif %}
         </div>
@@ -880,28 +964,21 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <p><strong>Número da Carga:</strong> {{ carga.numero_carga }}</p>
-                </div>
-                <div class="col-md-3">
                     <p><strong>Tipo de Ave:</strong> {{ carga.tipo_ave }}</p>
-                </div>
-                <div class="col-md-3">
                     <p><strong>Data de Abate:</strong> {{ carga.data_abate.strftime('%d/%m/%Y') }}</p>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <p><strong>Dia da Semana:</strong> {{ carga.dia_semana }}</p>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-3">
                     <p><strong>Quantidade de Cargas:</strong> {{ carga.quantidade_cargas }}</p>
-                </div>
-                <div class="col-md-3">
                     <p><strong>Ordem de Carga:</strong> {{ carga.ordem_carga }}</p>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <p><strong>Agenciador:</strong> {{ carga.agenciador }}</p>
+                    {% if carga.observacoes %}
+                    <p><strong>Observações:</strong> {{ carga.observacoes }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -909,7 +986,7 @@
 
     <!-- Informações do Transporte -->
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header">
             <h4>Informações do Transporte</h4>
         </div>
         <div class="card-body">
@@ -921,13 +998,13 @@
                     {% endif %}
                     <p><strong>Transportadora:</strong> {{ carga.transportadora }}</p>
                     <p><strong>Placa do Veículo:</strong> {{ carga.placa_veiculo }}</p>
+                    <p><strong>Quantidade de Caixas:</strong> {{ carga.quantidade_caixas }}</p>
                 </div>
                 <div class="col-md-4">
                     <p><strong>KM Saída:</strong> {{ carga.km_saida }}</p>
                     <p><strong>KM Chegada:</strong> {{ carga.km_chegada }}</p>
                     <p><strong>KM Rodados:</strong> {{ carga.km_rodados }}</p>
                     <p><strong>Caixas Vazias:</strong> {{ carga.caixas_vazias }}</p>
-                    <p><strong>Quantidade de Caixas:</strong> {{ carga.quantidade_caixas }}</p>
                 </div>
                 <div class="col-md-4">
                     <p><strong>Valor KM:</strong> R$ {{ "%.2f"|format(carga.valor_km) }}</p>
@@ -945,47 +1022,75 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-3">
-                    <p><strong>Peso na Granja:</strong> {{ "%.2f"|format(carga.peso_granja) if carga.peso_granja else '0.00' }} KG</p>
+                <div class="col-md-6">
+                    <p><strong>Peso na Granja:</strong> {{ "%.2f"|format(carga.peso_granja) }} KG</p>
+                    <p><strong>Peso no Frigorífico:</strong> {{ "%.2f"|format(carga.peso_frigorifico) }} KG</p>
+                    <p><strong>Quebra em Peso:</strong> {{ "%.2f"|format(carga.quebra_peso) }} KG</p>
                 </div>
-                <div class="col-md-3">
-                    <p><strong>Peso no Frigorífico:</strong> {{ "%.2f"|format(carga.peso_frigorifico) if carga.peso_frigorifico else '0.00' }} KG</p>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Percentual de Quebra:</strong> {{ "%.2f"|format(carga.percentual_quebra) if carga.percentual_quebra else '0.00' }}%</p>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Quebra em Peso:</strong> {{ "%.2f"|format(carga.quebra_peso) if carga.quebra_peso else '0.00' }} KG</p>
+                <div class="col-md-6">
+                    <p><strong>Percentual de Quebra:</strong> {{ "%.2f"|format(carga.percentual_quebra) }}%</p>
+                    <p><strong>Peso Líquido:</strong> 
+                        <span id="peso_liquido">
+                            {% if producao %}
+                                {{ "%.2f"|format(carga.peso_frigorifico - producao.total_avarias) }}
+                            {% else %}
+                                {{ "0.00" }}
+                            {% endif %}
+                        </span> KG
+                    </p>
+                    {% if carga.motivo_alta_quebra %}
+                    <p><strong>Motivo da Alta Quebra:</strong> {{ carga.motivo_alta_quebra }}</p>
+                    {% endif %}
                 </div>
             </div>
-            {% if carga.motivo_alta_quebra %}
-            <div class="row mt-3">
-                <div class="col-12">
-                    <p><strong>Motivo de Alta Quebra:</strong><br>{{ carga.motivo_alta_quebra }}</p>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 
     <!-- Informações Financeiras -->
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h4>Informações Financeiras</h4>
+            <div class="d-flex">
+                {% if current_user.tipo == 'financeiro' and carga.status_nota == 'pendente' %}
+                    <button onclick="aprovarNota({{ carga.id }})" class="btn btn-success btn-sm">
+                        <i class="fas fa-check"></i> Aprovar Nota
+                    </button>
+                {% endif %}
+                {% if current_user.tipo == 'diretoria' and carga.nota_aprovada and not carga.nota_autorizada %}
+                    <button type="button" class="btn btn-primary" onclick="autorizarNota()">
+                        <i class="fas fa-check-double"></i> Autorizar Carga
+                    </button>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <p class="mb-0">
+                        <strong>Status da Nota:</strong>
+                        <span class="badge {% if carga.status_nota == 'aprovado' %}bg-success
+                                         {% elif carga.status_nota == 'autorizado' %}bg-primary
+                                         {% else %}bg-secondary{% endif %}">
+                            {{ carga.status_nota|title }}
+                        </span>
+                        {% if carga.assinatura %}
+                            <small class="text-muted">(Assinado por: {{ carga.assinatura }})</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-4">
-                    <p><strong>Pedágios:</strong> R$ {{ "%.2f"|format(carga.pedagios) if carga.pedagios else '0.00' }}</p>
-                    <p><strong>Outras Despesas:</strong> R$ {{ "%.2f"|format(carga.outras_despesas) if carga.outras_despesas else '0.00' }}</p>
+                    <p><strong>Pedágios:</strong> R$ {{ "%.2f"|format(carga.pedagios) }}</p>
+                    <p><strong>Outras Despesas:</strong> R$ {{ "%.2f"|format(carga.outras_despesas) }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Abastecimento Empresa:</strong> R$ {{ "%.2f"|format(carga.abastecimento_empresa) if carga.abastecimento_empresa else '0.00' }}</p>
-                    <p><strong>Abastecimento Posto:</strong> R$ {{ "%.2f"|format(carga.abastecimento_posto) if carga.abastecimento_posto else '0.00' }}</p>
+                    <p><strong>Abastecimento Empresa:</strong> R$ {{ "%.2f"|format(carga.abastecimento_empresa) }}</p>
+                    <p><strong>Abastecimento Posto:</strong> R$ {{ "%.2f"|format(carga.abastecimento_posto) }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Adiantamento:</strong> R$ {{ "%.2f"|format(carga.adiantamento) if carga.adiantamento else '0.00' }}</p>
-                    <p><strong>Valor a Pagar:</strong> R$ {{ "%.2f"|format(carga.valor_pagar) if carga.valor_pagar else '0.00' }}</p>
+                    <p><strong>Adiantamento:</strong> R$ {{ "%.2f"|format(carga.adiantamento) }}</p>
+                    <p><strong>Valor a Pagar:</strong> R$ {{ "%.2f"|format(carga.valor_pagar) }}</p>
                 </div>
             </div>
         </div>
@@ -1181,69 +1286,72 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Detalhes da Carga {{ carga.numero_carga }}</h5>
-            <div>
-                {% if carga.nota_autorizada %}
-                    <span class="badge bg-success">Nota Autorizada</span>
-                    <small class="text-muted ms-2">
-                        por {{ carga.autorizado_por.nome }} em {{ carga.autorizado_em.strftime('%d/%m/%Y %H:%M') }}
-                    </small>
-                {% elif carga.nota_aprovada %}
-                    <span class="badge bg-info">Nota Aprovada</span>
-                    <small class="text-muted ms-2">
-                        por {{ carga.aprovado_por.nome }} em {{ carga.aprovado_em.strftime('%d/%m/%Y %H:%M') }}
-                    </small>
-                    {% if current_user.tipo in ['diretoria', 'gerente', 'admin'] %}
-                        <button onclick="autorizarNota({{ carga.id }})" class="btn btn-sm btn-primary ms-2">
-                            <i class="fas fa-key"></i> Autorizar Nota
-                        </button>
-                    {% endif %}
-                {% else %}
-                    <span class="badge bg-warning">Nota Pendente</span>
-                    {% if current_user.tipo == 'financeiro' %}
-                    <button onclick="aprovarNota({{ carga.id }})" class="btn btn-sm btn-success ms-2">
-                        <i class="fas fa-check"></i> Aprovar Nota
-                    </button>
-                    {% endif %}
-                {% endif %}
-                
-                <button onclick="solicitarRevisao({{ carga.id }})" class="btn btn-sm btn-warning ms-2">
-                    <i class="fas fa-edit"></i> Solicitar Revisão
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-warning" onclick="solicitarRevisao({{ carga.id }})">
+                    <i class="fas fa-search"></i> Solicitar Revisão
+                </button>
+                <button class="btn btn-danger" onclick="solicitarExclusao({{ carga.id }})">
+                    <i class="fas fa-trash"></i> Solicitar Exclusão
                 </button>
             </div>
         </div>
-        {% if carga.nota_autorizada %}
-        <div class="card-footer">
-            <strong>Assinatura de Autorização:</strong>
-            <p class="font-monospace mt-2">{{ carga.assinatura_autorizacao }}</p>
-        </div>
-        {% endif %}
     </div>
 
-    <!-- Modal de Solicitação de Edição -->
-    <div class="modal fade" id="solicitarEdicaoModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Solicitar Edição - <span id="tipoEdicaoTexto"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="card">
+        <div class="card-header no-print">
+            <h3 class="card-title">Visualizar Carga</h3>
+            <div class="card-tools">
+                {% include 'includes/modal_documento.html' %}
+            </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="{{ url_for('cargas.editar_carga', id=carga.id) }}" class="btn btn-primary">Editar</a>
+                <a href="{{ url_for('cargas.listar_cargas') }}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+
+        <!-- Seção de documentos no final -->
+        <div class="card mt-4" data-carga-id="{{ carga.id }}">
+            {% include 'includes/modal_documento.html' %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+    {{ super() }}
+    {% include 'includes/documentos_script.html' %}
+{% endblock %}
+</div>
+</div>
+
+<!-- Modal de Solicitação de Edição -->
+<div class="modal fade" id="solicitarEdicaoModal" tabindex="-1" aria-labelledby="solicitarEdicaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="solicitarEdicaoModalLabel">Solicitar Edição - <span id="tipoEdicaoTexto"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="motivo_edicao" class="form-label">Motivo da Solicitação</label>
+                    <textarea class="form-control" id="motivo_edicao" rows="3" required></textarea>
+                    <small class="form-text text-muted">Explique o motivo pelo qual você precisa editar esta carga.</small>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="motivo_edicao">Motivo da Edição:</label>
-                        <textarea class="form-control" id="motivo_edicao" rows="3" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="enviarSolicitacao()">Solicitar</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="enviarSolicitacao()">Enviar Solicitação</button>
             </div>
         </div>
     </div>
+</div>
 
-    {% block extra_js %}
-    {% endblock %}
-    {% endblock %}
+{% block extra_js %}
+{% endblock %}
+{% endblock %}

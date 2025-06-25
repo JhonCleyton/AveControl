@@ -1,63 +1,173 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    .status-badge {
+        padding: 0.35em 0.65em;
+        border-radius: 10px;
+        font-size: 0.875em;
+    }
+    .status-pendente { background-color: #ffc107; color: #000; }  /* Amarelo */
+    .status-em-andamento { background-color: #0d6efd; color: #fff; }  /* Azul */
+    .status-concluida { background-color: #198754; color: #fff; }  /* Verde */
+    .status-cancelada { background-color: #dc3545; color: #fff; }  /* Vermelho */
+    .status-incompleta { background-color: #6c757d; color: #fff; }  /* Cinza */
+    
+    .error-alert {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    /* Estilo para a marca d'água */
+    .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.9;
+        pointer-events: none;
+        z-index: -1;
+        width: 400px;
+        height: 400px;
+        background-image: url("{{ url_for('static', filename='img/logo.png') }}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* Ajuste para garantir que o conteúdo fique acima da marca d'água */
+    .container-fluid {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Garantir que os dropdowns fiquem acima dos cards */
+    .navbar {
+        position: relative;
+        z-index: 1100 !important;
+    }
+    .dropdown-menu {
+        z-index: 1050 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="welcome-section mb-4">
-        <h2 class="mb-3">Bem-vindo(a), {{ current_user.nome }}!</h2>
-        <p class="text-muted">
-            <i class="fas fa-users"></i> {{ stats.usuarios_online }} usuário(s) online
-        </p>
+<!-- Adicionar elementos com dados para serem lidos pelo JavaScript -->
+<div id="status-data" 
+     data-pendente="{{ stats.status.pendente|default(0) }}" 
+     data-em-andamento="{{ stats.status['em andamento']|default(0) }}" 
+     data-concluida="{{ stats.status.concluida|default(0) }}" 
+     data-cancelada="{{ stats.status.cancelada|default(0) }}" 
+     data-incompleta="{{ stats.status.incompleta|default(0) }}"
+     style="display: none;"></div>
+
+<div id="tendencia-data" data-tendencia='{{ stats.tendencia_mensal|default([])|tojson|safe }}' style="display: none;"></div>
+
+<!-- Adiciona a marca d'água -->
+<div class="watermark"></div>
+
+<div class="container-fluid mt-4">
+    {% if error %}
+    <div class="error-alert">
+        <h4><i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados</h4>
+        <p>{{ error }}</p>
+        <p>Por favor, tente novamente em alguns instantes.</p>
     </div>
+    {% endif %}
 
     <div class="row mb-4">
-        <!-- Total de Cargas -->
-        <div class="col-md-3 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-truck text-primary"></i>
-                        Total de Cargas
-                    </h5>
-                    <h2 class="display-4">{{ stats.total_cargas }}</h2>
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Dashboard Analítico</h2>
+                <div class="d-flex align-items-center">
+                    <!-- Filtro de data global aqui -->
+                    <form class="d-flex gap-2 me-3" id="filtroGlobal">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <input type="date" class="form-control" id="dataInicialGlobal" name="data_inicial">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <input type="date" class="form-control" id="dataFinalGlobal" name="data_final">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                    </form>
+                    <span class="text-muted me-3">
+                        <i class="fas fa-users"></i> {{ usuarios_online }} usuário(s) online
+                    </span>
+                    <button onclick="window.location.reload()" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Cargas Pendentes -->
-        <div class="col-md-3 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-clock text-warning"></i>
-                        Cargas Pendentes
-                    </h5>
-                    <h2 class="display-4">{{ stats.cargas_pendentes }}</h2>
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-truck"></i> Total de Cargas
+                    </h6>
+                    <h2 class="display-4" id="total-cargas">{{ stats.total_cargas|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas no sistema</p>
                 </div>
             </div>
         </div>
-
-        <!-- Cargas Hoje -->
-        <div class="col-md-3 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-calendar-day text-success"></i>
-                        Cargas Hoje
-                    </h5>
-                    <h2 class="display-4">{{ stats.cargas_hoje }}</h2>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-clock"></i> Pendentes
+                    </h6>
+                    <h2 class="display-4" id="cargas-pendentes">{{ stats.cargas_pendentes|default(0) }}</h2>
+                    <p class="mb-0">Cargas aguardando processamento</p>
                 </div>
             </div>
         </div>
-
-        <!-- Cargas do Mês -->
-        <div class="col-md-3 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">
-                        <i class="fas fa-calendar-alt text-info"></i>
-                        Cargas do Mês
-                    </h5>
-                    <h2 class="display-4">{{ stats.cargas_mes }}</h2>
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-calendar-day"></i> Hoje
+                    </h6>
+                    <h2 class="display-4" id="cargas-hoje">{{ stats.cargas_hoje|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas hoje</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-calendar-alt"></i> Este Mês
+                    </h6>
+                    <h2 class="display-4" id="cargas-mes">{{ stats.cargas_mes|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas no mês</p>
                 </div>
             </div>
         </div>
@@ -65,116 +175,540 @@
 
     <div class="row mb-4">
         <!-- Gráfico de Status -->
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-pie"></i>
-                        Status das Cargas
+                        <i class="fas fa-chart-pie"></i> Distribuição por Status
                     </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart" style="height: 300px;"></canvas>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Últimas Cargas -->
-        <div class="col-md-6 mb-3">
-            <div class="card h-100">
+        <!-- Gráfico de Tendência -->
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-history"></i>
-                        Últimas Cargas
+                        <i class="fas fa-chart-line"></i> Tendência Mensal
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="list-group">
-                        {% for carga in stats.ultimas_cargas %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ carga.numero_carga }}</h6>
-                                <small class="text-muted">{{ carga.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                            <small class="text-muted">Status: {{ carga.status }}</small>
-                        </div>
-                        {% else %}
-                        <div class="list-group-item">
-                            <p class="mb-1">Nenhuma carga registrada</p>
-                        </div>
-                        {% endfor %}
+                    <div class="chart-container">
+                        <canvas id="tendenciaChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notificações -->
-    <div class="row">
-        <div class="col-md-6 offset-md-3">
-            <div class="card">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card stat-card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bell"></i>
-                        Últimas Notificações
+                        <i class="fas fa-user-friends me-2"></i>Top Produtores
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="list-group">
-                        {% for notif in stats.notificacoes %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <p class="mb-1">{{ notif.mensagem }}</p>
-                                <small class="text-muted">{{ notif.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="list-group-item">
-                            <p class="mb-1">Nenhuma notificação pendente</p>
-                        </div>
-                        {% endfor %}
+                    <div class="table-responsive">
+                        {% set total_peso_geral = stats.top_produtores | sum(attribute='total_peso') %}
+                        <table class="table table-hover" id="tabelaProdutores">
+                            <thead>
+                                <tr>
+                                    <th>Produtor</th>
+                                    <th class="text-center">Total Cargas</th>
+                                    <th class="text-center">%</th>
+                                    <th class="text-end">Total Peso (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produtor in stats.top_produtores|default([]) %}
+                                <tr>
+                                    <td>{{ produtor.nome }}</td>
+                                    <td class="text-center">
+                                        {{ produtor.total_cargas }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if total_peso_geral > 0 %}
+                                            ({{ "%.1f"|format((produtor.total_peso / total_peso_geral) * 100) }}%)
+                                        {% else %}
+                                            (0.0%)
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">{{ "%.2f"|format(produtor.total_peso|float) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>Nenhum produtor encontrado
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card text-white bg-purple h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-file-invoice-dollar"></i> Produção
+                    </h6>
+                    <h2 class="display-4" id="total-aves">{{ stats.producao.total_aves|default(0)|int }}</h2>
+                    <p class="mb-0">Total de aves processadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card text-white bg-danger h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-skull-crossbones"></i> Mortalidade
+                    </h6>
+                    <h2 class="display-4" id="media-mortalidade">{{ '%.2f'|format(stats.producao.media_mortalidade|default(0)) }}%</h2>
+                    <p class="mb-0">Taxa média de mortalidade</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-exclamation-circle"></i> Média de Avarias
+                    </h6>
+                    <h2 class="display-4" id="media-avarias">{{ '%.2f'|format(stats.producao.media_avarias|default(0)) }}%</h2>
+                    <p class="mb-0">Taxa média de avarias</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('statusChart').getContext('2d');
-    const statusData = {{ stats.stats_status | tojson }};
-    
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Pendente', 'Em Andamento', 'Concluída', 'Cancelada'],
-            datasets: [{
-                data: [
-                    statusData.pendente,
-                    statusData.em_andamento,
-                    statusData.concluida,
-                    statusData.cancelada
-                ],
-                backgroundColor: [
-                    '#ffc107',  // Amarelo para pendente
-                    '#17a2b8',  // Azul para em andamento
-                    '#28a745',  // Verde para concluída
-                    '#dc3545'   // Vermelho para cancelada
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+    // Código JavaScript não terá acesso aos valores Jinja diretamente
+    // Em vez disso, vamos definir os valores como atributos de dados em elementos HTML
+    // e depois lê-los usando JavaScript
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatar números iniciais com separador de milhar
+        const totalCargas = document.getElementById('total-cargas');
+        const cargasPendentes = document.getElementById('cargas-pendentes');
+        const cargasHoje = document.getElementById('cargas-hoje');
+        const cargasMes = document.getElementById('cargas-mes');
+        const totalAves = document.getElementById('total-aves');
+
+        if (totalCargas) totalCargas.textContent = formatarNumero(parseInt(totalCargas.textContent || 0));
+        if (cargasPendentes) cargasPendentes.textContent = formatarNumero(parseInt(cargasPendentes.textContent || 0));
+        if (cargasHoje) cargasHoje.textContent = formatarNumero(parseInt(cargasHoje.textContent || 0));
+        if (cargasMes) cargasMes.textContent = formatarNumero(parseInt(cargasMes.textContent || 0));
+        if (totalAves) totalAves.textContent = formatarNumero(parseInt(totalAves.textContent || 0));
+
+        // Formatar números na tabela de produtores
+        const tabelaProdutores = document.querySelector('#tabelaProdutores tbody');
+        if (tabelaProdutores) {
+            const linhas = tabelaProdutores.querySelectorAll('tr');
+            linhas.forEach(linha => {
+                const colunas = linha.querySelectorAll('td');
+                if (colunas.length >= 4) {
+                    // Formatar total de cargas (coluna 1)
+                    const totalCargas = parseInt(colunas[1].textContent || 0);
+                    colunas[1].textContent = formatarNumero(totalCargas);
+
+                    // Formatar peso total (coluna 3)
+                    const pesoTotal = parseFloat(colunas[3].textContent || 0);
+                    colunas[3].textContent = formatarNumero(pesoTotal.toFixed(2));
+                }
+            });
+        }
+
+        // Obter os dados iniciais de status do elemento data
+        const statusData = {
+            pendente: parseInt(document.getElementById('status-data').getAttribute('data-pendente') || 0),
+            emAndamento: parseInt(document.getElementById('status-data').getAttribute('data-em-andamento') || 0),
+            concluida: parseInt(document.getElementById('status-data').getAttribute('data-concluida') || 0),
+            cancelada: parseInt(document.getElementById('status-data').getAttribute('data-cancelada') || 0),
+            incompleta: parseInt(document.getElementById('status-data').getAttribute('data-incompleta') || 0)
+        };
+
+        // Obter os dados de tendência do elemento data
+        let tendenciaData = [];
+        try {
+            const tendenciaJson = document.getElementById('tendencia-data').getAttribute('data-tendencia');
+            if (tendenciaJson && tendenciaJson.trim() !== '') {
+                tendenciaData = JSON.parse(tendenciaJson);
+            }
+        } catch (error) {
+            console.error('Erro ao analisar dados de tendência:', error);
+        }
+
+        // Definir data atual e data de 30 dias atrás como padrão
+        const hoje = new Date();
+        const dataInicial = new Date();
+        dataInicial.setDate(hoje.getDate() - 30);
+        
+        // Formatar as datas no formato YYYY-MM-DD
+        document.getElementById('dataInicialGlobal').value = formatarData(dataInicial);
+        document.getElementById('dataFinalGlobal').value = formatarData(hoje);
+
+        // Inicializar gráficos
+        initStatusChart(statusData);
+        initTendenciaChart(tendenciaData);
+
+        // Adicionar event listener para o filtro global
+        document.getElementById('filtroGlobal').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const dataInicial = document.getElementById('dataInicialGlobal').value;
+            const dataFinal = document.getElementById('dataFinalGlobal').value;
+            
+            if (!dataInicial || !dataFinal) {
+                toastr.error('Por favor, informe as datas inicial e final');
+                return;
+            }
+            
+            // Atualizar todos os componentes da dashboard com o filtro
+            fetch(`/api/dashboard/filtrado?data_inicial=${dataInicial}&data_final=${dataFinal}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        atualizarDashboard(data);
+                        toastr.success('Dashboard atualizado com sucesso');
+                    } else {
+                        toastr.error(data.message || 'Erro ao atualizar dashboard');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    toastr.error('Erro ao atualizar dashboard: ' + error.message);
+                });
+        });
+    });
+
+    // Função para formatar data no formato YYYY-MM-DD
+    function formatarData(data) {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    // Função auxiliar para formatar números com separador de milhar
+    function formatarNumero(numero) {
+        return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // Inicializar o gráfico de status
+    function initStatusChart(statusData) {
+        const statusCtx = document.getElementById('statusChart');
+        
+        if (statusCtx) {
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendente', 'Em Andamento', 'Concluída', 'Cancelada', 'Incompleta'],
+                    datasets: [{
+                        data: [
+                            statusData.pendente,
+                            statusData.emAndamento,
+                            statusData.concluida,
+                            statusData.cancelada,
+                            statusData.incompleta
+                        ],
+                        backgroundColor: [
+                            '#ffc107', // Amarelo - Pendente
+                            '#0d6efd', // Azul - Em Andamento
+                            '#198754', // Verde - Concluída
+                            '#dc3545', // Vermelho - Cancelada
+                            '#6c757d'  // Cinza - Incompleta
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Inicializar o gráfico de tendência
+    function initTendenciaChart(tendenciaData) {
+        const trendCtx = document.getElementById('tendenciaChart');
+        
+        if (trendCtx && tendenciaData.length > 0) {
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: tendenciaData.map(item => item.mes),
+                    datasets: [{
+                        label: 'Cargas por Mês',
+                        data: tendenciaData.map(item => item.total),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        } else if (trendCtx) {
+            trendCtx.parentElement.innerHTML = '<div class="text-center text-muted">Nenhum dado disponível</div>';
+        }
+    }
+
+    // Função para atualizar todos os cards com os dados filtrados
+    function atualizarDashboard(data) {
+        if (!data || !data.success || !data.stats) {
+            console.error('Dados inválidos recebidos do servidor');
+            return;
+        }
+        
+        const stats = data.stats;
+        
+        // Atualizar contadores com formatação de milhar
+        document.getElementById('total-cargas').textContent = formatarNumero(stats.total_cargas || 0);
+        document.getElementById('cargas-pendentes').textContent = formatarNumero(stats.cargas_pendentes || 0);
+        document.getElementById('cargas-hoje').textContent = formatarNumero(stats.cargas_hoje || 0);
+        document.getElementById('cargas-mes').textContent = formatarNumero(stats.cargas_mes || 0);
+        
+        // Atualizar gráfico de status
+        atualizarGraficoStatus(stats.status);
+        
+        // Atualizar lista de produtores
+        atualizarProdutores(stats.top_produtores);
+        
+        // Atualizar estatísticas de produção
+        if (stats.producao) {
+            document.getElementById('total-aves').textContent = 
+                stats.producao.total_aves ? 
+                formatarNumero(parseInt(stats.producao.total_aves)) : '0';
+            
+            document.getElementById('media-mortalidade').textContent = 
+                stats.producao.media_mortalidade ? 
+                parseFloat(stats.producao.media_mortalidade).toFixed(2) + '%' : '0%';
+                
+            document.getElementById('media-avarias').textContent = 
+                stats.producao.media_avarias ? 
+                parseFloat(stats.producao.media_avarias).toFixed(2) + '%' : '0%';
+        }
+        
+        // Atualizar gráfico de tendência
+        atualizarGraficoTendencia(stats.tendencia_mensal);
+    }
+
+    // Função para atualizar o gráfico de status
+    function atualizarGraficoStatus(statusData) {
+        if (!statusData) {
+            console.warn('Dados de status inválidos');
+            return;
+        }
+        
+        try {
+            const statusChart = Chart.getChart('statusChart');
+            
+            if (statusChart) {
+                statusChart.data.datasets[0].data = [
+                    parseInt(statusData.pendente || 0),
+                    parseInt(statusData['em andamento'] || 0),
+                    parseInt(statusData.concluida || 0),
+                    parseInt(statusData.cancelada || 0),
+                    parseInt(statusData.incompleta || 0)
+                ];
+                statusChart.update();
+            } else {
+                console.warn('Gráfico de status não encontrado');
+                const statusCtx = document.getElementById('statusChart');
+                if (statusCtx) {
+                    initStatusChart({
+                        pendente: parseInt(statusData.pendente || 0),
+                        emAndamento: parseInt(statusData['em andamento'] || 0),
+                        concluida: parseInt(statusData.concluida || 0),
+                        cancelada: parseInt(statusData.cancelada || 0),
+                        incompleta: parseInt(statusData.incompleta || 0)
+                    });
                 }
             }
+        } catch (e) {
+            console.error('Erro ao atualizar gráfico de status:', e);
         }
-    });
-});
+    }
+
+    // Função para atualizar o gráfico de tendência
+    function atualizarGraficoTendencia(tendenciaData) {
+        if (!tendenciaData || !Array.isArray(tendenciaData) || tendenciaData.length === 0) {
+            console.warn('Dados de tendência inválidos ou vazios');
+            
+            // Se não houver dados, mostrar mensagem de sem dados
+            const trendCtx = document.getElementById('tendenciaChart');
+            if (trendCtx) {
+                const parentElement = trendCtx.parentElement;
+                if (parentElement) {
+                    parentElement.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-info-circle me-2"></i>Nenhum dado disponível no período selecionado</div>';
+                }
+            }
+            return;
+        }
+        
+        const tendenciaChart = Chart.getChart('tendenciaChart');
+        
+        // Se o gráfico já existe, atualize-o
+        if (tendenciaChart) {
+            tendenciaChart.data.labels = tendenciaData.map(item => item.mes);
+            tendenciaChart.data.datasets[0].data = tendenciaData.map(item => item.total);
+            tendenciaChart.update();
+        } 
+        // Se o gráfico não existe, crie um novo
+        else {
+            const trendCtx = document.getElementById('tendenciaChart');
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: tendenciaData.map(item => item.mes),
+                        datasets: [{
+                            label: 'Cargas por Mês',
+                            data: tendenciaData.map(item => item.total),
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    // Função para atualizar a tabela de produtores
+    function atualizarProdutores(data) {
+        if (!data) {
+            console.warn('Dados de produtores inválidos');
+            return;
+        }
+        
+        const tbody = document.querySelector('#tabelaProdutores tbody');
+        if (!tbody) {
+            console.error('Elemento tbody não encontrado');
+            return;
+        }
+        
+        tbody.innerHTML = ''; // Limpa a tabela atual
+        
+        if (!data.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center text-muted">
+                        <i class="fas fa-info-circle me-2"></i>Nenhum produtor encontrado no período selecionado
+                    </td>
+                </tr>`;
+            return;
+        }
+        
+        try {
+            const totalPesoGeral = data.reduce((acc, prod) => {
+                const peso = parseFloat(prod.total_peso) || 0;
+                return acc + peso;
+            }, 0);
+            
+            data.forEach(produtor => {
+                const nome = produtor.nome || 'N/A';
+                const totalCargas = formatarNumero(produtor.total_cargas || 0);
+                let totalPeso = '0,00';
+                let percentual = '0,0';
+                
+                try {
+                    totalPeso = formatarNumero(parseFloat(produtor.total_peso || 0).toFixed(2));
+                    percentual = totalPesoGeral > 0 
+                        ? ((parseFloat(produtor.total_peso || 0) / totalPesoGeral) * 100).toFixed(1).replace('.', ',')
+                        : '0,0';
+                } catch (e) {
+                    console.error('Erro ao calcular percentual:', e);
+                }
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>{{ nome }}</td>
+                        <td class="text-center">{{ totalCargas }}</td>
+                        <td class="text-center">({{ percentual }}%)</td>
+                        <td class="text-end">{{ totalPeso }}</td>
+                    </tr>`;
+            });
+        } catch (e) {
+            console.error('Erro ao atualizar tabela de produtores:', e);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Erro ao processar dados dos produtores
+                    </td>
+                </tr>`;
+        }
+    }
 </script>
 {% endblock %}

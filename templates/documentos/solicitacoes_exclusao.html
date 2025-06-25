@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Solicitações de Exclusão de Documentos</h2>
+    
+    {% if documentos %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Carga</th>
+                    <th>Solicitante</th>
+                    <th>Data Solicitação</th>
+                    <th>Motivo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documentos %}
+                <tr>
+                    <td>{{ doc.tipo_documento }}</td>
+                    <td>{{ doc.carga.numero_carga }}</td>
+                    <td>{{ doc.solicitado_exclusao_por.nome }}</td>
+                    <td>{{ doc.data_solicitacao_exclusao.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ doc.motivo_exclusao }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-success btn-sm" onclick="aprovarExclusao({{ doc.id }}, true)">
+                                <i class="fas fa-check"></i> Aprovar
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="aprovarExclusao({{ doc.id }}, false)">
+                                <i class="fas fa-times"></i> Rejeitar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Não há solicitações de exclusão pendentes.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/documentos.js') }}"></script>
+{% endblock %}

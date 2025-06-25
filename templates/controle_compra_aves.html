@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Compra de Aves</title>
+</head>
+<body>
+    <h1>Controle de Compra de Aves</h1>
+    <form method="POST" action="/cargas/controle_compra_aves/">
+        <label for="data_inicial">Data Inicial:</label>
+        <input type="date" id="data_inicial" name="data_inicial" required>
+        <label for="data_final">Data Final:</label>
+        <input type="date" id="data_final" name="data_final" required>
+        <label for="carga_id">Carga:</label>
+        <input type="text" id="carga_id" name="carga_id">
+        <button type="submit">Filtrar</button>
+        <button type="button" onclick="window.location.href='/export_pdf'">Exportar para PDF</button>
+        <button type="button" onclick="window.location.href='/export_excel'">Exportar para Excel</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Nº Carga</th>
+                <th>Data de Abate</th>
+                <th>Frete</th>
+                <th>Comissão</th>
+                <th>Custo da Ave</th>
+                <th>Custo de Carregamento</th>
+                <th>Custo Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for carga in cargas %}
+            <tr>
+                <td>{{ carga.numero }}</td>
+                <td>{{ carga.data_abate }}</td>
+                <td>{{ carga.frete }}</td>
+                <td><input type="text" name="comissao" value="{{ carga.comissao }}"></td>
+                <td>{{ carga.custo_ave }}</td>
+                <td><input type="text" name="custo_carregamento" value="{{ carga.custo_carregamento }}"></td>
+                <td>{{ carga.custo_total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

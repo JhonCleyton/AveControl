@@ -1,0 +1,16 @@
+[Unit]
+Description=AveControl Backup System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/var/www/AveControl
+Environment=PATH=/var/www/AveControl/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/var/www/AveControl/venv/bin/python /var/www/AveControl/backup_system.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

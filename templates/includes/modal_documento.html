@@ -1,0 +1,201 @@
+<!-- Modal de Documentos -->
+<div class="modal fade" id="modal-documento" tabindex="-1" role="dialog" {% if carga is defined %}data-carga-id="{{ carga.id }}"{% endif %}>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gerenciar Documentos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Lista de documentos existentes -->
+                <div id="lista-documentos" class="mb-3">
+                    <!-- Documentos serão inseridos aqui via JavaScript -->
+                </div>
+
+                {% if current_user.tipo == 'gerente' %}
+                <!-- Seção de Solicitações de Exclusão -->
+                <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">Solicitações de Exclusão Pendentes</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="lista-solicitacoes-exclusao">
+                            <!-- Solicitações serão inseridas aqui via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Formulário de adição de documento -->
+                <form id="form-documento" enctype="multipart/form-data" method="post" {% if carga is defined %}action="/api/carga/{{ carga.id }}/documentos"{% else %}action=""{% endif %} target="upload-iframe" onsubmit="handleDocumentoSubmit(this); return false;">
+    <input type="hidden" id="carga_id_hidden" name="carga_id" value="{% if carga is defined %}{{ carga.id }}{% endif %}">
+
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group mb-3">
+                        <label for="tipo_documento" class="form-label">Tipo de Documento*</label>
+                        <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                            <option value="">Selecione...</option>
+                            <option value="Boletim Sanitário">Boletim Sanitário</option>
+                            <option value="Boleto">Boleto</option>
+                            <option value="Check-List">Check-List</option>
+                            <option value="Comprovante de abastecimento">Comprovante de abastecimento</option>
+                            <option value="GTA">GTA</option>
+                            <option value="NDFE/CTE">NDFE/CTE</option>
+                            <option value="Nota Fiscal">Nota Fiscal</option>
+                            <option value="Ticket de Peso Granja">Ticket de Peso Granja</option>
+                            <option value="Ticket de peso Frigorífico">Ticket de peso Frigorífico</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <!-- Campo para especificar outro tipo -->
+                    <div id="outro-tipo-div" class="form-group mb-3" style="display: none;">
+                        <label for="outro_tipo_descricao" class="form-label">Especifique o tipo*</label>
+                        <input type="text" class="form-control" id="outro_tipo_descricao" name="outro_tipo_descricao">
+                    </div>
+
+                    <!-- Checkbox para documento ausente -->
+                    <div class="form-group mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="ausente" name="ausente">
+                            <label class="form-check-label" for="ausente">Registrar ausência de documento</label>
+                        </div>
+                    </div>
+
+                    <!-- Campo para motivo da ausência -->
+                    <div id="motivo-ausencia-div" class="form-group mb-3" style="display: none;">
+                        <label for="motivo_ausencia" class="form-label">Motivo da ausência*</label>
+                        <textarea class="form-control" id="motivo_ausencia" name="motivo_ausencia" rows="3"></textarea>
+                    </div>
+
+                    <!-- Campo para upload -->
+                    <div id="upload-div" class="form-group mb-3">
+                        <label for="arquivo" class="form-label">Arquivo*</label>
+                        <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" multiple>
+                        <small class="form-text text-muted">
+                            Formatos permitidos: PDF, PNG, JPG, JPEG, DOC, DOCX, XLS, XLSX
+                        </small>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Adicionar Documento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Exclusão -->
+<div class="modal fade" id="modalSolicitarExclusao" tabindex="-1" aria-labelledby="modalSolicitarExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSolicitarExclusaoLabel">Solicitar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formSolicitarExclusao">
+                    <input type="hidden" id="documentoIdExclusao" name="documentoIdExclusao">
+                    <div class="mb-3">
+                        <label for="motivoExclusao" class="form-label">Por favor, informe o motivo da exclusão:</label>
+                        <textarea class="form-control" id="motivoExclusao" name="motivoExclusao" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="DocumentosModule.solicitarExclusao(document.getElementById('documentoIdExclusao').value)">Solicitar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botão para abrir modal de documentos -->
+<button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modal-documento">
+    <i class="fas fa-file-alt"></i> Documentos
+</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ausenteCheckbox = document.getElementById('ausente');
+        const uploadDiv = document.getElementById('upload-div');
+        const motivoAusenciaDiv = document.getElementById('motivo-ausencia-div');
+        const motivoAusenciaInput = document.getElementById('motivo_ausencia');
+        const arquivoInput = document.getElementById('arquivo');
+        const tipoDocumentoSelect = document.getElementById('tipo_documento');
+        const outroTipoDiv = document.getElementById('outro-tipo-div');
+        const outroTipoInput = document.getElementById('outro_tipo_descricao');
+
+        // Função para gerenciar campos required
+        function gerenciarCamposRequired() {
+            if (ausenteCheckbox.checked) {
+                motivoAusenciaInput.setAttribute('required', '');
+                arquivoInput.removeAttribute('required');
+                uploadDiv.style.display = 'none';
+                motivoAusenciaDiv.style.display = 'block';
+            } else {
+                motivoAusenciaInput.removeAttribute('required');
+                arquivoInput.setAttribute('required', '');
+                uploadDiv.style.display = 'block';
+                motivoAusenciaDiv.style.display = 'none';
+            }
+        }
+
+        // Event listener para o checkbox de ausência
+        ausenteCheckbox.addEventListener('change', gerenciarCamposRequired);
+
+        // Event listener para o select de tipo de documento
+        tipoDocumentoSelect.addEventListener('change', function() {
+            if (this.value === 'Outro') {
+                outroTipoDiv.style.display = 'block';
+                outroTipoInput.setAttribute('required', '');
+            } else {
+                outroTipoDiv.style.display = 'none';
+                outroTipoInput.removeAttribute('required');
+            }
+        });
+
+        // Inicializar o estado dos campos
+        gerenciarCamposRequired();
+    });
+
+    // Funu00e7u00e3o para lidar com o envio do formulu00e1rio de documento
+    function handleDocumentoSubmit(form) {
+        // Tentar obter o ID da carga do modal
+        let cargaId = document.querySelector('#modal-documento').getAttribute('data-carga-id');
+        
+        // Se nu00e3o encontrou no modal, tentar obter da URL atual
+        if (!cargaId) {
+            const urlMatch = window.location.pathname.match(/\/cargas\/visualizar\/([0-9]+)/);
+            if (urlMatch && urlMatch[1]) {
+                cargaId = urlMatch[1];
+            }
+        }
+        
+        // Se ainda nu00e3o encontrou, tentar obter de algum elemento selecionado na pu00e1gina
+        if (!cargaId) {
+            const selectedRow = document.querySelector('tr.selected');
+            if (selectedRow) {
+                cargaId = selectedRow.getAttribute('data-id');
+            }
+        }
+        
+        if (cargaId) {
+            // Atualizar o campo hidden e a action do formulu00e1rio
+            document.getElementById('carga_id_hidden').value = cargaId;
+            form.action = '/api/carga/' + cargaId + '/documentos';
+            
+            // Submeter o formulu00e1rio e recarregar a pu00e1gina apu00f3s 1 segundo
+            setTimeout(function() { window.location.reload(); }, 1000);
+            form.submit();
+            return true;
+        } else {
+            alert('Nu00e3o foi possu00edvel determinar o ID da carga. Por favor, selecione uma carga primeiro.');
+            return false;
+        }
+    }
+</script>
+
+<!-- iframe oculto para receber a resposta do upload -->
+<iframe name="upload-iframe" style="display:none;"></iframe>

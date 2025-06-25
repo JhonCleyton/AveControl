@@ -7,15 +7,29 @@
     <meta name="developer" content="JC Bytes - Soluções em Tecnologia">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo2.png') }}">
-    <title>{% block title %}AveControl{% endblock %} | JC Bytes</title>
-    <!-- Bootstrap CSS -->
+    <title>{% block title %}AveControl{% endblock title %} | JC Bytes</title>
+    
+    <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Custom CSS -->
-     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <style>
+        :root {
+            --body-bg: #f8f9fa;
+            --text-color: #212529;
+            --card-bg: #ffffff;
+            --card-header-bg: #f8f9fa;
+            --navbar-bg: #343a40;
+            --navbar-text: #ffffff;
+            --link-color: #0d6efd;
+            --border-color: rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --input-text: #212529;
+        }
+
         /* Estilos base */
         body {
             font-size: 14px;
@@ -23,7 +37,8 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background-color: #f8f9fa;
+            background-color: var(--body-bg);
+            color: var(--text-color);
         }
 
         /* Container principal */
@@ -37,19 +52,48 @@
         /* Cards */
         .card {
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--border-color);
             margin-bottom: 1rem;
             border: none;
+            background-color: var(--card-bg);
         }
 
         .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            background-color: var(--card-header-bg);
+            border-bottom: 1px solid var(--border-color);
             padding: 1rem;
+            color: var(--text-color);
         }
 
         .card-body {
-            padding: 1rem;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* Inputs */
+        .form-control {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border-color: var(--border-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        /* Links */
+        a {
+            color: var(--link-color);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--navbar-bg) !important;
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--navbar-text);
         }
 
         /* Tabelas */
@@ -63,7 +107,7 @@
         }
 
         .table th {
-            background-color: #f8f9fa;
+            background-color: var(--card-header-bg);
             font-weight: 600;
         }
 
@@ -73,50 +117,9 @@
             border-radius: 6px;
         }
 
-        /* Navbar */
-        .navbar {
-            background-color: #212529 !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 0.5rem 1rem;
-        }
-
-        .navbar-brand {
-            color: #fff !important;
-        }
-
-        .nav-link {
-            color: rgba(255,255,255,.75) !important;
-        }
-
-        .nav-link:hover {
-            color: #fff !important;
-        }
-
-        .navbar-toggler {
-            border-color: rgba(255,255,255,.1);
-        }
-
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
-
-        .dropdown-menu {
-            background-color: #343a40;
-            border: none;
-        }
-
-        .dropdown-item {
-            color: rgba(255,255,255,.75);
-        }
-
-        .dropdown-item:hover {
-            background-color: #495057;
-            color: #fff;
-        }
-
         /* Footer */
         .footer {
-            background-color: #212529;
+            background-color: var(--navbar-bg);
             color: rgba(255, 255, 255, 0.75);
             padding: 0.8rem 0;
             margin-top: auto;
@@ -126,20 +129,37 @@
             color: #3498db;
             text-decoration: none;
             transition: color 0.3s ease;
+            margin: 0 5px;
         }
         
         .footer a:hover {
             color: #2980b9;
         }
-        
-        .footer .social-links {
-            display: inline-block;
-            margin-left: 1rem;
+
+        .footer i {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+        }
+
+        .footer i:hover {
+            transform: scale(1.2);
         }
         
-        .footer .social-links a {
+        .footer .social-icons {
+            display: inline-block;
+            margin-left: 15px;
+        }
+        
+        .footer .social-icons a {
+            color: rgba(255, 255, 255, 0.75);
+            margin: 0 8px;
             font-size: 1.1em;
-            margin: 0 0.3rem;
+            transition: all 0.3s ease;
+        }
+        
+        .footer .social-icons a:hover {
+            color: #3498db;
+            transform: translateY(-2px);
         }
 
         /* Marca d'água (logo) */
@@ -148,11 +168,47 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            opacity: 0.05;
+            opacity: 0.6;
             pointer-events: none;
             z-index: -1;
             max-width: 80%;
             height: auto;
+        }
+
+        /* Notificações */
+        .notification-menu {
+            padding: 0;
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+
+        .notification-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .notification-item .btn-link {
+            padding: 0;
+            color: #dc3545;
+        }
+
+        .notification-item .btn-link:hover {
+            color: #bb2d3b;
+        }
+
+        .badge {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+
+        .position-absolute.top-0.start-100.translate-middle {
+            transform: translate(-50%, -50%);
         }
 
         @media (max-width: 300px) {
@@ -198,27 +254,31 @@
             .table-responsive {
                 border: 0;
             }
-            
-            .card {
-                border-radius: 6px;
-            }
-
-            .background-logo {
-                max-width: 40%;
-                opacity: 0.03;
-            }
         }
 
-        @media (max-width: 768px) {
+        /* Notificações */
+        #chat-badge {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            padding: 3px 6px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.75rem;
+            min-width: 18px;
+            text-align: center;
         }
 
-        /* Estilos para notificações */
         .notification-item {
-            transition: background-color 0.2s ease;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
         }
 
-        .notification-clickable:hover {
-            background-color: rgba(0, 123, 255, 0.05) !important;
+        .notification-item:hover {
+            background-color: #f8f9fa;
         }
 
         .notification-item .notification-title {
@@ -226,29 +286,23 @@
             color: #2c3e50;
         }
 
-        .notification-item .notification-message {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-
         .notification-item .notification-time {
-            font-size: 0.75rem;
-            color: #95a5a6;
+            font-size: 0.8rem;
+            color: #7f8c8d;
         }
 
-        #notificacoesDropdown:after {
-            display: none;
+        .notification-item.unread {
+            background-color: #e3f2fd;
         }
 
-        .dropdown-menu {
-            border-radius: 0.5rem;
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        .notification-item.unread:hover {
+            background-color: #bbdefb;
         }
     </style>
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}{% endblock extra_css %}
+    {% block styles %}{% endblock %}
 </head>
-<body>
+<body data-theme="{{ current_user.tema if current_user.is_authenticated else 'claro' }}">
     <!-- Logo de fundo -->
     {% if current_user.is_authenticated %}
     <img src="{{ url_for('static', filename='logo1.jpg') }}" class="background-logo" alt="Logo">
@@ -266,136 +320,137 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+    {% if current_user.is_authenticated %}
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('gerenciamento_produto.gerenciamento_produto') }}">
+            <i class="fas fa-drumstick-bite"></i> Gerenciamento de Produto
+        </a>
+    </li>
+    {% endif %}
                     {% if current_user.is_authenticated %}
+                        <!-- Botão Home para voltar à página inicial -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="http://91.108.126.1" target="_blank">
+                                <i class="fas fa-home"></i> Página Inicial
+                            </a>
+                        </li>
+                        
                         <!-- Menu de Cargas -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-boxes"></i> Cargas
+                            <a class="nav-link dropdown-toggle" href="#" id="cargasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-truck-loading"></i> Cargas
                             </a>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu" aria-labelledby="cargasDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.index') }}"><i class="fas fa-list"></i> Lista de Cargas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.minhas_solicitacoes') }}"><i class="fas fa-history"></i> Minhas Solicitações</a></li>
                                 {% if current_user.tipo == 'balanca' %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('cargas.nova_carga') }}">
-                                        <i class="fas fa-plus"></i> Nova Carga
-                                    </a>
-                                </li>
-                                {% endif %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('cargas.cargas_incompletas') }}">
-                                        <i class="fas fa-clock"></i> Cargas Incompletas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('cargas.todas_cargas') }}">
-                                        <i class="fas fa-list"></i> Todas as Cargas
-                                    </a>
-                                </li>
-                                {% if current_user.tipo == 'producao' %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('cargas.producao') }}">
-                                        <i class="fas fa-industry"></i> Produção
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.nova_carga') }}"><i class="fas fa-plus"></i> Nova Carga</a></li>
                                 {% endif %}
                                 {% if current_user.tipo == 'fechamento' %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('cargas.fechamento_carga') }}">
-                                        <i class="fas fa-file-invoice-dollar"></i> Fechamento de Carga
-                                    </a>
-                                </li>
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.fechamento_carga') }}"><i class="fas fa-file-invoice-dollar"></i> Fechamento</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('custo_aves.index') }}"><i class="fas fa-dollar-sign"></i> Custo de Aves</a></li>
+                                {% endif %}
+                                {% if current_user.tipo in ['gerente', 'diretoria', 'financeiro'] %}
+                                <li><a class="dropdown-item" href="{{ url_for('analise_custos.index') }}"><i class="fas fa-chart-line"></i> Análise de Custos</a></li>
                                 {% endif %}
                             </ul>
                         </li>
 
-                        <!-- Menu de Usuários -->
-                        {% if current_user.tipo == 'gerente' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('usuarios.index') }}">
-                                <i class="fas fa-users"></i> Usuários
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        {% if current_user.tipo in ['gerente', 'diretoria', 'transportadora', 'financeiro'] %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('resumos.index') }}">
-                                <i class="fas fa-file-invoice-dollar"></i> Resumos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('relatorios.index') }}">
-                                <i class="fas fa-chart-line"></i> Relatórios
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Menu do Desenvolvedor -->
-                        {% if current_user.tipo == 'desenvolvedor' %}
+                        {% if current_user.tipo in ['financeiro', 'transportadora'] %}
+                        <!-- Menu Financeiro -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDevDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-code"></i> Desenvolvedor
+                            <a class="nav-link dropdown-toggle" href="#" id="financeiroDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-file-invoice-dollar"></i> Financeiro
                             </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('dev.configuracoes') }}">
-                                        <i class="fas fa-cogs"></i> Configurações
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('dev.formularios') }}">
-                                        <i class="fas fa-list-alt"></i> Formulários
-                                    </a>
-                                </li>
+                            <ul class="dropdown-menu" aria-labelledby="financeiroDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('resumos.index') }}"><i class="fas fa-chart-line"></i> Resumos</a></li>
                             </ul>
                         </li>
                         {% endif %}
-                        {% if current_user.tipo in ['producao', 'gerente'] %}
+
+                        {% if current_user.tipo == 'gerente' %}
+                        <!-- Menu de Gerenciamento -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="gerenciamentoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cogs"></i> Gerenciamento
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="gerenciamentoDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.listar_solicitacoes') }}"><i class="fas fa-tasks"></i> Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.minhas_solicitacoes') }}"><i class="fas fa-history"></i> Minhas Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.relatorios') }}"><i class="fas fa-chart-bar"></i> Relatórios de Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('usuarios.index') }}"><i class="fas fa-users"></i> Usuários</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('backup.backup_central') }}"><i class="fas fa-database"></i> Central de Backup</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('documentos.listar_solicitacoes_exclusao') }}"><i class="fas fa-file-alt"></i> Documentos Pendentes</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- Menu de Relatórios -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-chart-bar"></i> Relatórios
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.index') }}"><i class="fas fa-truck"></i> Relatório de Cargas</a></li>
+                                {% if current_user.tipo in ['gerente', 'diretoria'] %}
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.imprimir') }}"><i class="fas fa-print"></i> Imprimir Relatório</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('resumos.index') }}"><i class="fas fa-calendar-alt"></i> Resumos</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('analise_custos.index') }}"><i class="fas fa-chart-line"></i> Análise de Custos</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
+                        <!-- Link de Produção -->
+                        {% if current_user.tipo in ['producao'] %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('cargas.producao') }}">
                                     <i class="fas fa-clipboard-list"></i> Produção
                                 </a>
                             </li>
                         {% endif %}
+
+                        <!-- Link de Chat -->
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('cargas.listar_cargas') }}">
-                                <i class="fas fa-truck"></i> Cargas
-                            </a>
-                        </li>
-                        {% if current_user.tipo in ['gerente', 'admin'] %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('solicitacoes.listar_solicitacoes') }}">
-                                <i class="fas fa-tasks"></i> Gerenciar Solicitações
-                            </a>
-                        </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('solicitacoes.minhas_solicitacoes') }}">
-                                <i class="fas fa-clipboard-list"></i> Minhas Solicitações
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('chat.index') }}">
+                            <a class="nav-link position-relative" href="{{ url_for('chat.index') }}">
                                 <i class="fas fa-comments"></i> Chat
+                                <span id="chat-badge" class="badge rounded-pill bg-danger"></span>
                             </a>
                         </li>
+
+                        <!-- Notificações -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <span id="notificacoes-badge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle"></span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="notificacoesDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                <div id="notificacoes-menu">
+                                    <!-- As notificações serão inseridas aqui via JavaScript -->
+                                </div>
+                            </div>
+                        </li>
+
                     {% endif %}
                 </ul>
 
                 <!-- Menu do Usuário -->
                 {% if current_user.is_authenticated %}
                 <ul class="navbar-nav">
-                    {% include 'components/notificacoes.html' %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user"></i> {{ current_user.nome }}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('perfil.ver_perfil') }}">
+                                <a class="dropdown-item" href="{{ url_for('perfil.perfil_view') }}">
                                     <i class="fas fa-user-circle"></i> Meu Perfil
                                 </a>
                             </li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                     <i class="fas fa-sign-out-alt"></i> Sair
@@ -414,60 +469,216 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Content -->
     <div class="container-fluid mt-4">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="mb-0">2025 JC Bytes - Solução em Tecnologia. Todos os direitos reservados. | Desenvolvido por <a href="https://github.com/JhonCleyton">Jhon Cleyton</a> <span class="social-icons"><a href="mailto:jhon.freire@ftc.edu.br" title="Email"><i class="fas fa-envelope"></i></a><a href="https://wa.me/5573981723483" title="WhatsApp"><i class="fab fa-whatsapp"></i></a><a href="https://github.com/JhonCleyton" title="GitHub"><i class="fab fa-github"></i></a><a href="https://linkedin.com/in/jhon-freire" title="LinkedIn"><i class="fab fa-linkedin"></i></a></span></p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    {% block extra_js %}{% endblock %}
-    <!-- Custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
     <script>
-        // Configurar o token CSRF para todas as requisições AJAX
+        // Configuração do CSRF token para requisições AJAX
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token() }}");
+                    xhr.setRequestHeader("X-CSRFToken", document.querySelector('meta[name="csrf-token"]').content);
                 }
             }
         });
 
-        // Inicialização de tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
+        // Sistema global de notificações
+        const notificacoes = {
+            intervalo: null,
+            
+            inicializar() {
+                this.atualizarNotificacoes();
+                this.intervalo = setInterval(() => this.atualizarNotificacoes(), 10000);
+            },
+            
+            atualizarNotificacoes() {
+                $.ajax({
+                    url: '/notificacoes/listar',
+                    method: 'GET',
+                    success: (response) => {
+                        const badge = $('#notificacoes-badge');
+                        const notificacoesMenu = $('#notificacoes-menu');
+                        
+                        // Atualizar o badge com o número de notificações
+                        if (response.notificacoes.length > 0) {
+                            badge.text(response.notificacoes.length);
+                            badge.show();
+                        } else {
+                            badge.hide();
+                        }
+                        
+                        // Atualizar o menu dropdown
+                        notificacoesMenu.empty();
+                        
+                        if (response.notificacoes.length > 0) {
+                            response.notificacoes.forEach(notif => {
+                                const item = `
+                                    <div class="notification-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>${notif.titulo}</strong>
+                                                <p class="mb-1">${notif.mensagem}</p>
+                                                <small class="text-muted">${notif.data}</small>
+                                            </div>
+                                            <button class="btn btn-link p-0" onclick="notificacoes.marcarComoLida(${notif.id})">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                notificacoesMenu.append(item);
+                            });
+                            
+                            // Adicionar botão para limpar todas
+                            const limparTodas = `
+                                <div class="p-2 text-center">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="notificacoes.limparTodas()">
+                                        Limpar Todas
+                                    </button>
+                                </div>
+                            `;
+                            notificacoesMenu.append(limparTodas);
+                        } else {
+                            notificacoesMenu.append('<div class="p-3 text-center text-muted">Nenhuma notificação</div>');
+                        }
+                    }
+                });
+            },
+            
+            marcarComoLida(id) {
+                $.ajax({
+                    url: `/notificacoes/marcar_como_lida/${id}`,
+                    method: 'POST',
+                    success: (response) => {
+                        if (response.success) {
+                            this.atualizarNotificacoes();
+                        }
+                    }
+                });
+            },
+            
+            limparTodas() {
+                $.ajax({
+                    url: '/notificacoes/limpar_todas',
+                    method: 'POST',
+                    success: (response) => {
+                        if (response.success) {
+                            this.atualizarNotificacoes();
+                        }
+                    }
+                });
+            }
+        };
+
+        // Sistema global de notificações do chat
+        const chatNotificacoes = {
+            intervalo: null,
+            
+            inicializar() {
+                this.atualizarNotificacoes();
+                // Atualizar a cada 10 segundos
+                this.intervalo = setInterval(() => this.atualizarNotificacoes(), 10000);
+                
+                // Adicionar listener para o dropdown de chat
+                $('#chatDropdown').on('show.bs.dropdown', () => {
+                    // Carregar e marcar mensagens como lidas
+                    this.carregarMensagens();
+                });
+            },
+            
+            carregarMensagens() {
+                // Carregar mensagens do grupo
+                $.ajax({
+                    url: '/chat/mensagens_grupo',
+                    method: 'GET',
+                    success: (response) => {
+                        // Atualizar badge após carregar mensagens
+                        this.atualizarNotificacoes();
+                    }
+                });
+                
+                // Carregar mensagens individuais para cada usuário
+                $('.chat-list-item[id^="chat-"]').each((i, el) => {
+                    const userId = el.id.replace('chat-', '');
+                    if (userId !== 'grupo') {
+                        $.ajax({
+                            url: `/chat/mensagens_individuais/${userId}`,
+                            method: 'GET',
+                            success: (response) => {
+                                // Atualizar badge após carregar mensagens
+                                this.atualizarNotificacoes();
+                            }
+                        });
+                    }
+                });
+            },
+            
+            atualizarNotificacoes() {
+                $.ajax({
+                    url: '/chat/notificacoes',
+                    method: 'GET',
+                    success: function(response) {
+                        const badge = $('#chat-badge');
+                        if (response.nao_lidas > 0) {
+                            badge.text(response.nao_lidas);
+                            badge.show();
+                        } else {
+                            badge.hide();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Erro ao buscar notificações do chat:', error);
+                    }
+                });
+            }
+        };
+
+        // Funções globais
+        function marcarComoLida(id) {
+            notificacoes.marcarComoLida(id);
+        }
+
+        function limparNotificacoes() {
+            notificacoes.limparTodas();
+        }
+
+        // Inicializar sistemas quando o documento estiver pronto
+        $(document).ready(function() {
+            if ({{ current_user.is_authenticated|tojson }}) {
+                notificacoes.inicializar();
+                chatNotificacoes.inicializar();
+            }
         });
     </script>
-    {% if request.endpoint == 'auth.index' %}
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-12 text-center">
-                    &copy; 2025 JC Bytes - Soluções em Tecnologia. Todos os direitos reservados. | 
-                    Desenvolvido por <a href="https://linkedin.com/in/jhon-freire" target="_blank">Jhon Cleyton</a>
-                    <span class="social-links">
-                        <a href="mailto:jhon.freire@ftc.edu.br" title="Email"><i class="fas fa-envelope"></i></a>
-                        <a href="https://wa.me/5573981723483" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                        <a href="https://github.com/jhoncleyton" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-                        <a href="https://linkedin.com/in/jhon-freire" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </footer>
-    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

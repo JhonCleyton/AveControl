@@ -14,10 +14,11 @@
                                 <tr>
                                     <th>Carga</th>
                                     <th>Tipo</th>
+                                    <th>Setor</th>
                                     <th>Status</th>
-                                    <th>Motivo</th>
                                     <th>Solicitado por</th>
                                     <th>Data</th>
+                                    <th>Motivo</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -38,15 +39,17 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Aprovar Solicitação</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>Motivo da Solicitação:</strong></label>
+                    <p id="motivo_solicitacao_aprovacao" class="mb-0"></p>
+                </div>
                 <p>Deseja aprovar esta solicitação de edição?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" onclick="aprovarSolicitacao()">Aprovar</button>
             </div>
         </div>
@@ -59,18 +62,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Rejeitar Solicitação</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>Motivo da Solicitação:</strong></label>
+                    <p id="motivo_solicitacao_rejeicao" class="mb-0"></p>
+                </div>
                 <div class="form-group">
                     <label for="motivo_rejeicao">Motivo da Rejeição:</label>
                     <textarea class="form-control" id="motivo_rejeicao" rows="3" required></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" onclick="rejeitarSolicitacao()">Rejeitar</button>
             </div>
         </div>
@@ -83,31 +88,34 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Verificar Edição</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>Motivo da Solicitação:</strong></label>
+                    <p id="motivo_solicitacao_verificacao" class="mb-0"></p>
+                </div>
                 <div class="form-group">
                     <label for="observacoes_verificacao">Observações:</label>
                     <textarea class="form-control" id="observacoes_verificacao" rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success" onclick="verificarEdicao()">Finalizar</button>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-let solicitacaoSelecionada = null;
+let solicitacaoAtual = null;
 
 function carregarSolicitacoes() {
-    fetch('/cargas/solicitacoes_edicao')
+    fetch('/cargas/api/solicitacoes')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -117,148 +125,212 @@ function carregarSolicitacoes() {
                 data.solicitacoes.forEach(s => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${s.carga_numero}</td>
+                        <td>${s.carga_numero || 'N/A'}</td>
                         <td>${s.tipo_solicitacao}</td>
-                        <td><span class="badge badge-${getBadgeClass(s.status)}">${s.status}</span></td>
-                        <td>${s.motivo}</td>
+                        <td>${s.setor}</td>
+                        <td><span class="badge ${getBadgeClass(s.status)}">${s.status}</span></td>
                         <td>${s.solicitado_por}</td>
-                        <td>${s.solicitado_em}</td>
+                        <td>${s.criado_em}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-info" 
+                                onclick="mostrarMotivo('${s.motivo}')" 
+                                title="Clique para ver o motivo">
+                                Ver Motivo
+                            </button>
+                        </td>
                         <td>${getBotoesAcao(s)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             } else {
-                alert(data.message);
+                console.error('Erro ao carregar solicitações:', data.message);
             }
         })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao carregar solicitações');
-        });
+        .catch(error => console.error('Erro:', error));
+}
+
+function mostrarMotivo(motivo) {
+    Swal.fire({
+        title: 'Motivo da Solicitação',
+        text: motivo,
+        icon: 'info'
+    });
 }
 
 function getBadgeClass(status) {
     switch (status) {
-        case 'pendente':
-            return 'warning';
-        case 'aprovada':
-            return 'success';
-        case 'rejeitada':
-            return 'danger';
-        case 'finalizada':
-            return 'info';
+        case 'PENDENTE':
+            return 'bg-warning text-dark';
+        case 'APROVADA':
+            return 'bg-success';
+        case 'REJEITADA':
+            return 'bg-danger';
+        case 'VERIFICADA':
+            return 'bg-info';
         default:
-            return 'secondary';
+            return 'bg-secondary';
     }
 }
 
 function getBotoesAcao(solicitacao) {
-    if (solicitacao.status === 'pendente') {
+    if (solicitacao.status === 'PENDENTE') {
         return `
-            <button class="btn btn-sm btn-success" onclick="abrirModalAprovacao(${solicitacao.id})">
-                <i class="fas fa-check"></i>
+            <button class="btn btn-success btn-sm" onclick="abrirModalAprovacao(${solicitacao.id}, '${solicitacao.motivo}')">
+                <i class="fas fa-check"></i> Aprovar
             </button>
-            <button class="btn btn-sm btn-danger" onclick="abrirModalRejeicao(${solicitacao.id})">
-                <i class="fas fa-times"></i>
+            <button class="btn btn-danger btn-sm" onclick="abrirModalRejeicao(${solicitacao.id}, '${solicitacao.motivo}')">
+                <i class="fas fa-times"></i> Rejeitar
             </button>
         `;
-    } else if (solicitacao.status === 'aprovada') {
+    } else if (solicitacao.status === 'APROVADA') {
         return `
-            <button class="btn btn-sm btn-primary" onclick="abrirModalVerificacao(${solicitacao.id})">
-                <i class="fas fa-check-double"></i>
+            <button class="btn btn-info btn-sm" onclick="abrirModalVerificacao(${solicitacao.id}, '${solicitacao.motivo}')">
+                <i class="fas fa-check-double"></i> Verificar
             </button>
         `;
     }
     return '';
 }
 
-function abrirModalAprovacao(id) {
-    solicitacaoSelecionada = id;
-    $('#aprovarModal').modal('show');
+function abrirModalAprovacao(id, motivo) {
+    solicitacaoAtual = id;
+    document.getElementById('motivo_solicitacao_aprovacao').textContent = motivo;
+    const modal = new bootstrap.Modal(document.getElementById('aprovarModal'));
+    modal.show();
 }
 
-function abrirModalRejeicao(id) {
-    solicitacaoSelecionada = id;
+function abrirModalRejeicao(id, motivo) {
+    solicitacaoAtual = id;
+    document.getElementById('motivo_solicitacao_rejeicao').textContent = motivo;
     document.getElementById('motivo_rejeicao').value = '';
-    $('#rejeitarModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('rejeitarModal'));
+    modal.show();
 }
 
-function abrirModalVerificacao(id) {
-    solicitacaoSelecionada = id;
+function abrirModalVerificacao(id, motivo) {
+    solicitacaoAtual = id;
+    document.getElementById('motivo_solicitacao_verificacao').textContent = motivo;
     document.getElementById('observacoes_verificacao').value = '';
-    $('#verificarModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('verificarModal'));
+    modal.show();
 }
 
 function aprovarSolicitacao() {
-    fetch(`/cargas/aprovar_edicao/${solicitacaoSelecionada}`, {
+    fetch(`/cargas/aprovar_edicao/${solicitacaoAtual}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            $('#aprovarModal').modal('hide');
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: 'Solicitação aprovada com sucesso!'
+            });
+            bootstrap.Modal.getInstance(document.getElementById('aprovarModal')).hide();
             carregarSolicitacoes();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: data.message
+            });
         }
-        alert(data.message);
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao aprovar solicitação');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Ocorreu um erro ao aprovar a solicitação.'
+        });
     });
 }
 
 function rejeitarSolicitacao() {
     const motivo = document.getElementById('motivo_rejeicao').value;
     if (!motivo) {
-        alert('Por favor, informe o motivo da rejeição');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Por favor, informe o motivo da rejeição.'
+        });
         return;
     }
-    
-    fetch(`/cargas/rejeitar_edicao/${solicitacaoSelecionada}`, {
+
+    fetch(`/cargas/rejeitar_edicao/${solicitacaoAtual}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ motivo_rejeicao: motivo })
+        body: JSON.stringify({ motivo: motivo })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            $('#rejeitarModal').modal('hide');
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: 'Solicitação rejeitada com sucesso!'
+            });
+            bootstrap.Modal.getInstance(document.getElementById('rejeitarModal')).hide();
             carregarSolicitacoes();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: data.message
+            });
         }
-        alert(data.message);
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao rejeitar solicitação');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Ocorreu um erro ao rejeitar a solicitação.'
+        });
     });
 }
 
 function verificarEdicao() {
     const observacoes = document.getElementById('observacoes_verificacao').value;
-    
-    fetch(`/cargas/verificar_edicao/${solicitacaoSelecionada}`, {
+
+    fetch(`/cargas/verificar_edicao/${solicitacaoAtual}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({ observacoes: observacoes })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            $('#verificarModal').modal('hide');
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: 'Edição verificada com sucesso!'
+            });
+            bootstrap.Modal.getInstance(document.getElementById('verificarModal')).hide();
             carregarSolicitacoes();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: data.message
+            });
         }
-        alert(data.message);
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao verificar edição');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Ocorreu um erro ao verificar a edição.'
+        });
     });
 }
 

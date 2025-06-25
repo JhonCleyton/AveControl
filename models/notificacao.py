@@ -20,11 +20,11 @@ class Notificacao(db.Model):
     exibir_popup = db.Column(db.Boolean, default=False)
     
     # Relacionamentos
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    usuario = db.relationship('Usuario', backref=db.backref('notificacoes', lazy=True))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='CASCADE'), nullable=False)
+    usuario = db.relationship('Usuario', backref=db.backref('notificacoes', lazy=True, cascade='all, delete-orphan'))
     
-    carga_id = db.Column(db.Integer, db.ForeignKey('cargas.id'), nullable=True)
-    carga = db.relationship('Carga', backref=db.backref('notificacoes', lazy=True))
+    carga_id = db.Column(db.Integer, db.ForeignKey('cargas.id', ondelete='CASCADE'), nullable=True)
+    carga = db.relationship('Carga', backref=db.backref('notificacoes', lazy=True, cascade='all, delete-orphan'))
 
     @staticmethod
     def criar_notificacao(tipo, titulo, mensagem, usuario_id, carga_id=None, exibir_popup=False):

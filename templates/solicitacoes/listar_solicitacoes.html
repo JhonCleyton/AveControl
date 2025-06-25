@@ -19,13 +19,14 @@
                             <th>Solicitante</th>
                             <th>Data</th>
                             <th>Status</th>
+                            <th>Motivo</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for solicitacao in solicitacoes %}
                         <tr>
-                            <td>{{ solicitacao.carga.numero_carga }}</td>
+                            <td>Carga #{{ solicitacao.carga.numero_carga }}</td>
                             <td>
                                 {% if solicitacao.tipo == 'revisao' %}
                                     <span class="badge bg-info">Revisão</span>
@@ -51,33 +52,28 @@
                                     <span class="badge bg-warning">Pendente</span>
                                 {% elif solicitacao.status == 'aprovada' %}
                                     <span class="badge bg-success">Aprovada</span>
-                                {% else %}
+                                {% elif solicitacao.status == 'rejeitada' or solicitacao.status == 'reprovada' %}
                                     <span class="badge bg-danger">Reprovada</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Finalizada</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <button 
-                                    class="btn btn-sm btn-info" 
-                                    onclick="verDetalhes({{ solicitacao.id }})"
-                                    title="Ver Detalhes"
-                                >
+                                <button type="button" class="btn btn-sm btn-info" onclick="verMotivo('{{ solicitacao.motivo }}')" title="Clique para ver o motivo">
+                                    Ver Motivo
+                                </button>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-info" onclick="verDetalhes({{ solicitacao.id }})">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 {% if solicitacao.status == 'pendente' %}
-                                <button 
-                                    class="btn btn-sm btn-success" 
-                                    onclick="analisarSolicitacao({{ solicitacao.id }}, 'aprovada')"
-                                    title="Aprovar"
-                                >
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button 
-                                    class="btn btn-sm btn-danger" 
-                                    onclick="analisarSolicitacao({{ solicitacao.id }}, 'reprovada')"
-                                    title="Reprovar"
-                                >
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                    <button type="button" class="btn btn-sm btn-success" onclick="analisarSolicitacao({{ solicitacao.id }}, 'aprovada')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="analisarSolicitacao({{ solicitacao.id }}, 'rejeitada')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -95,34 +91,7 @@
 const solicitacoes = {{ solicitacoes_json|tojson|safe }};
 
 function verDetalhes(id) {
-    const solicitacao = solicitacoes.find(s => s.id === id);
-    if (!solicitacao) return;
-    
-    let statusHtml = '';
-    if (solicitacao.analisado_por) {
-        statusHtml = `
-            <p><strong>Analisado por:</strong> ${solicitacao.analisado_por}</p>
-            <p><strong>Data da análise:</strong> ${solicitacao.analisado_em}</p>
-            <p><strong>Observação:</strong> ${solicitacao.observacao_analise || '-'}</p>
-        `;
-    }
-    
-    Swal.fire({
-        title: 'Detalhes da Solicitação',
-        html: `
-            <div class="text-start">
-                <p><strong>Carga:</strong> ${solicitacao.carga.numero_carga}</p>
-                <p><strong>Tipo:</strong> ${solicitacao.tipo === 'revisao' ? 'Revisão' : solicitacao.tipo === 'edicao' ? 'Edição' : 'Exclusão'}</p>
-                <p><strong>Setor:</strong> ${solicitacao.setor}</p>
-                <p><strong>Solicitante:</strong> ${solicitacao.solicitado_por}</p>
-                <p><strong>Data:</strong> ${solicitacao.criado_em}</p>
-                <p><strong>Motivo:</strong></p>
-                <p class="text-muted">${solicitacao.motivo}</p>
-                ${statusHtml}
-            </div>
-        `,
-        width: '600px'
-    });
+    window.location.href = `/solicitacoes/visualizar_carga/${id}`;
 }
 
 function analisarSolicitacao(id, status) {
@@ -179,6 +148,15 @@ function analisarSolicitacao(id, status) {
                 Swal.fire('Erro!', `Erro ao ${acao} solicitação: ${error.message}`, 'error');
             });
         }
+    });
+}
+
+function verMotivo(motivo) {
+    Swal.fire({
+        title: 'Motivo da Solicitação',
+        text: motivo,
+        icon: 'info',
+        confirmButtonText: 'OK'
     });
 }
 </script>

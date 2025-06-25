@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    .status-badge {
+        padding: 0.35em 0.65em;
+        border-radius: 10px;
+        font-size: 0.875em;
+    }
+    .status-pendente { background-color: #ffc107; color: #000; }  /* Amarelo */
+    .status-em-andamento { background-color: #0d6efd; color: #fff; }  /* Azul */
+    .status-concluida { background-color: #198754; color: #fff; }  /* Verde */
+    .status-cancelada { background-color: #dc3545; color: #fff; }  /* Vermelho */
+    .status-incompleta { background-color: #6c757d; color: #fff; }  /* Cinza */
+    
+    .error-alert {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    /* Estilo para a marca d'água */
+    .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.9;
+        pointer-events: none;
+        z-index: -1;
+        width: 400px;
+        height: 400px;
+        background-image: url("{{ url_for('static', filename='img/logo.png') }}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* Ajuste para garantir que o conteúdo fique acima da marca d'água */
+    .container-fluid {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Adiciona a marca d'água -->
+<div class="watermark"></div>
+
+<div class="container-fluid mt-4">
+    {% if error %}
+    <div class="error-alert">
+        <h4><i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados</h4>
+        <p>{{ error }}</p>
+        <p>Por favor, tente novamente em alguns instantes.</p>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>Dashboard Analítico</h2>
+                <div>
+                    <span class="text-muted me-3">
+                        <i class="fas fa-users"></i> {{ usuarios_online }} usuário(s) online
+                    </span>
+                    <button onclick="window.location.reload()" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-truck"></i> Total de Cargas
+                    </h6>
+                    <h2 class="display-4">{{ stats.total_cargas|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas no sistema</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-clock"></i> Pendentes
+                    </h6>
+                    <h2 class="display-4">{{ stats.cargas_pendentes|default(0) }}</h2>
+                    <p class="mb-0">Cargas aguardando processamento</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-calendar-day"></i> Hoje
+                    </h6>
+                    <h2 class="display-4">{{ stats.cargas_hoje|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas hoje</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-calendar-alt"></i> Este Mês
+                    </h6>
+                    <h2 class="display-4">{{ stats.cargas_mes|default(0) }}</h2>
+                    <p class="mb-0">Cargas registradas no mês</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Gráfico de Status -->
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie"></i> Distribuição por Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Tendência -->
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line"></i> Tendência Mensal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Substitua o cabeçalho atual do card por este -->
+<div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-user-friends me-2"></i>Top Produtores
+        </h5>
+        <form class="d-flex gap-2" id="filtroProdutor">
+            <input type="date" class="form-control form-control-sm" id="dataInicial" name="data_inicial">
+            <input type="date" class="form-control form-control-sm" id="dataFinal" name="data_final">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i>
+            </button>
+        </form>
+    </div>
+</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        {% set total_peso_geral = stats.top_produtores | sum(attribute='total_peso') %}
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Produtor</th>
+                                    <th class="text-center">Total Cargas</th>
+                                    <th class="text-center">%</th>
+                                    <th class="text-end">Total Peso (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produtor in stats.top_produtores|default([]) %}
+                                <tr>
+                                    <td>{{ produtor.nome }}</td>
+                                    <td class="text-center">
+                                        {{ produtor.total_cargas }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if total_peso_geral > 0 %}
+                                            ({{ "%.1f"|format((produtor.total_peso / total_peso_geral) * 100) }}%)
+                                        {% else %}
+                                            (0.0%)
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">{{ "%.2f"|format(produtor.total_peso|float) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>Nenhum produtor encontrado
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Cargas -->
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history"></i> Últimas Cargas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nº Carga</th>
+                                    <th>Tipo de Ave</th>
+                                    <th class="text-center">Qtd. Cargas</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for carga in stats.ultimas_cargas %}
+                                <tr>
+                                    <td>{{ carga.numero }}</td>
+                                    <td>{{ carga.tipo_ave }}</td>
+                                    <td class="text-center">{{ carga.quantidade_cargas }}</td>
+                                    <td class="text-center">
+                                        <span class="badge {% if carga._status == 'pendente' %}bg-warning{% elif carga._status == 'em andamento' %}bg-primary{% elif carga._status == 'concluida' %}bg-success{% elif carga._status == 'cancelada' %}bg-danger{% elif carga._status == 'incompleta' %}bg-secondary{% endif %}">
+                                            {{ carga._status|title }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">{{ carga.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>Nenhuma carga encontrada
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas de Produção -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card text-white bg-purple h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-feather"></i> Total de Aves
+                    </h6>
+                    <h2 class="display-4">{{ '{:,}'.format(stats.producao.total_aves|default(0)) }}</h2>
+                    <p class="mb-0">Aves processadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i> Média de Mortalidade
+                    </h6>
+                    <h2 class="display-4">{{ '%.2f'|format(stats.producao.media_mortalidade|default(0)) }}%</h2>
+                    <p class="mb-0">Taxa média de mortalidade</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-exclamation-circle"></i> Média de Avarias
+                    </h6>
+                    <h2 class="display-4">{{ '%.2f'|format(stats.producao.media_avarias|default(0)) }}%</h2>
+                    <p class="mb-0">Taxa média de avarias</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ super() }}
+<script>
+document.getElementById('filtroProdutor').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const dataInicial = document.getElementById('dataInicial').value;
+    const dataFinal = document.getElementById('dataFinal').value;
+    
+    // Fazer requisição AJAX para atualizar os dados
+    fetch(`/api/produtores/top?data_inicial=${dataInicial}&data_final=${dataFinal}`)
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar a tabela com os novos dados
+            atualizarTabelaProdutores(data);
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            toastr.error('Erro ao atualizar dados dos produtores');
+        });
+});
+
+function atualizarTabelaProdutores(data) {
+    const tbody = document.querySelector('#tabelaProdutores tbody');
+    tbody.innerHTML = ''; // Limpa a tabela atual
+    
+    if (data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted">
+                    <i class="fas fa-info-circle me-2"></i>Nenhum produtor encontrado
+                </td>
+            </tr>`;
+        return;
+    }
+    
+    const totalPesoGeral = data.reduce((acc, prod) => acc + prod.total_peso, 0);
+    
+    data.forEach(produtor => {
+        const percentual = totalPesoGeral > 0 
+            ? ((produtor.total_peso / totalPesoGeral) * 100).toFixed(1) 
+            : '0.0';
+            
+        tbody.innerHTML += `
+            <tr>
+                <td>${produtor.nome}</td>
+                <td class="text-center">${produtor.total_cargas}</td>
+                <td class="text-center">(${percentual}%)</td>
+                <td class="text-end">${produtor.total_peso.toFixed(2)}</td>
+            </tr>`;
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Status
+    const statusCtx = document.getElementById('statusChart');
+    const statusData = {
+        'Pendente': {{ stats.status.pendente }},
+        'Em Andamento': {{ stats.status['em andamento'] }},
+        'Concluída': {{ stats.status.concluida }},
+        'Cancelada': {{ stats.status.cancelada }},
+        'Incompleta': {{ stats.status.incompleta }}
+    };
+    
+    if (Object.keys(statusData).length > 0) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                datasets: [{
+                    data: Object.values(statusData),
+                    backgroundColor: [
+                        '#ffc107', // Amarelo - Pendente
+                        '#0d6efd', // Azul - Em Andamento
+                        '#198754', // Verde - Concluída
+                        '#dc3545', // Vermelho - Cancelada
+                        '#6c757d'  // Cinza - Incompleta
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    } else {
+        statusCtx.parentElement.innerHTML = '<div class="text-center text-muted">Nenhum dado disponível</div>';
+    }
+
+    // Gráfico de Tendência
+    const trendCtx = document.getElementById('trendChart');
+    const trendData = {{ stats.tendencia_mensal|default([])|tojson }};
+    
+    if (trendData.length > 0) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.map(d => {
+                    const [year, month] = d.mes.split('-');
+                    return `${month}/${year}`;
+                }),
+                datasets: [{
+                    label: 'Total de Cargas',
+                    data: trendData.map(d => d.total),
+                    borderColor: '#0d6efd',
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        trendCtx.parentElement.innerHTML = '<div class="text-center text-muted">Nenhum dado disponível</div>';
+    }
+});
+</script>
+{% endblock %}

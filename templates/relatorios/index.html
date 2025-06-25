@@ -1,452 +1,174 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-4">
-            <i class="fas fa-chart-line"></i> Relatórios
-        </h2>
-        <button onclick="imprimirRelatorio()" class="btn btn-primary">
-            <i class="fas fa-print"></i> Imprimir Relatório
-        </button>
-    </div>
-
-    <!-- Filtros -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                {% if current_user.tipo != 'transportadora' %}
-                <div class="col-md-3">
-                    <label for="transportadora" class="form-label">Transportadora:</label>
-                    <select name="transportadora" id="transportadora" class="form-select">
-                        <option value="">Todas as Transportadoras</option>
-                        {% for transp in resumo.transportadoras %}
-                        <option value="{{ transp }}" {% if transp == resumo.transportadora_selecionada %}selected{% endif %}>
-                            {{ transp }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
-                <div class="col-md-3">
-                    <label for="data_inicial" class="form-label">Data Inicial:</label>
-                    <input type="date" class="form-control" id="data_inicial" name="data_inicial" value="{{ resumo.data_inicial }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="data_final" class="form-label">Data Final:</label>
-                    <input type="date" class="form-control" id="data_final" name="data_final" value="{{ resumo.data_final }}">
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search"></i> Filtrar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Cards -->
-    <div class="row mb-4">
-        <!-- Card 1 - Quantidade de Cargas -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-blue">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-truck"></i> Total de Cargas
-                    </h5>
-                    <h2 class="display-4 text-white">{{ resumo.total_cargas }}</h2>
-                    <p class="text-white-50">no período selecionado</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 2 - Abastecimento Médio -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-green">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-gas-pump"></i> Abastecimento Médio
-                    </h5>
-                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.abastecimento_medio).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
-                    <p class="text-white-50">por carga</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 3 - Abastecimento Total -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-purple">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-gas-pump"></i> Abastecimento Total
-                    </h5>
-                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.abastecimento_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
-                    <p class="text-white-50">no período</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4 - Frete Médio -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-orange">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-money-bill-wave"></i> Frete Médio
-                    </h5>
-                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.frete_medio).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
-                    <p class="text-white-50">por carga</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 5 - Frete Total -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-indigo">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-money-check-alt"></i> Frete Total
-                    </h5>
-                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.frete_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
-                    <p class="text-white-50">no período</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 6 - Valor a Pagar Total -->
-        <div class="col-md-4 mb-4">
-            <div class="card card-gradient-red">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-white mb-3">
-                        <i class="fas fa-file-invoice-dollar"></i> Valor a Pagar Total
-                    </h5>
-                    <h2 class="display-4 text-white">{{ "{:,.2f}".format(resumo.valor_pagar_total).replace(',', '_').replace('.', ',').replace('_', '.') | prefix_currency }}</h2>
-                    <p class="text-white-50">no período</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gráficos -->
+<div class="container-fluid">
     <div class="row">
-        <!-- Gráfico de Linha - Evolução do Frete -->
-        <div class="col-md-8 mb-4">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Evolução do Frete</h5>
+                    <h3 class="card-title">Relatório de Cargas</h3>
+                    <div class="float-end">
+                        | Gerado em: {{ now.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
                 </div>
                 <div class="card-body">
-                    <canvas id="graficoLinha" style="height: 300px;"></canvas>
-                </div>
-            </div>
-        </div>
+                    <!-- Filtros -->
+                    <form method="GET" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="transportadora">Transportadora:</label>
+                                    <select name="transportadora" id="transportadora" class="form-control">
+                                        <option value="">Todas</option>
+                                        {% for t in transportadoras %}
+                                        <option value="{{ t }}" {% if t == transportadora_selecionada %}selected{% endif %}>{{ t }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="data_inicial">Data Inicial:</label>
+                                    <input type="date" name="data_inicial" id="data_inicial" class="form-control" value="{{ data_inicial }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="data_final">Data Final:</label>
+                                    <input type="date" name="data_final" id="data_final" class="form-control" value="{{ data_final }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary">Filtrar</button>
+                            </div>
+                        </div>
+                    </form>
 
-        <!-- Gráfico de Pizza - Distribuição de Gastos -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Distribuição de Gastos</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="graficoPizza" style="height: 300px;"></canvas>
+                    <!-- Cards de Totais -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total de Cargas</h5>
+                                    <p class="card-text">{{ resumo.total_cargas }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Frete</h5>
+                                    <p class="card-text">{{ resumo.total_frete | format_currency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Pedágios</h5>
+                                    <p class="card-text">{{ resumo.total_pedagios | format_currency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Despesas</h5>
+                                    <p class="card-text">{{ resumo.total_despesas | format_currency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Abastecimento</h5>
+                                    <p class="card-text">{{ resumo.total_abastecimento | format_currency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total a Pagar</h5>
+                                    <p class="card-text">{{ resumo.total_pagar | format_currency }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Evolução dos Valores</h5>
+                                    <canvas id="graficoLinha"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Distribuição por Transportadora</h5>
+                                    <canvas id="graficoPizza"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-/* Estilos normais */
-.card-3d {
-    background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 
-        5px 5px 15px rgba(0,0,0,0.2),
-        -5px -5px 15px rgba(255,255,255,0.7);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card-3d:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-        8px 8px 20px rgba(0,0,0,0.25),
-        -8px -8px 20px rgba(255,255,255,0.8);
-}
-
-.card-3d .card-body {
-    padding: 2rem;
-}
-
-.display-4 {
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin: 1rem 0;
-}
-
-.text-muted {
-    font-size: 0.9rem;
-}
-
-/* Estilos específicos para impressão */
-@media print {
-    @page {
-        size: A4 landscape;
-        margin: 0.3cm;
-    }
-
-    html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    .container {
-        width: 100% !important;
-        max-width: none !important;
-        padding: 5px !important;
-        margin: 0 !important;
-    }
-
-    /* Ocultar elementos desnecessários */
-    .navbar, .footer, form, .btn, .no-print {
-        display: none !important;
-    }
-
-    /* Ajustar cabeçalho do relatório */
-    .print-header {
-        display: block !important;
-        text-align: center;
-        margin-bottom: 5px;
-        padding: 5px;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .print-header h1 {
-        font-size: 16px !important;
-        margin: 0 !important;
-    }
-
-    .print-header p {
-        font-size: 10px !important;
-        margin: 2px 0 !important;
-    }
-
-    /* Título da página */
-    h2 {
-        font-size: 14px !important;
-        margin: 5px 0 !important;
-        text-align: center;
-    }
-
-    /* Cards */
-    .row {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        margin: 0 -2px !important;
-    }
-
-    .col-md-4 {
-        width: 16.66% !important; /* 6 cards por linha */
-        padding: 2px !important;
-        float: left !important;
-    }
-
-    .card {
-        margin: 0 !important;
-        border: 1px solid #ddd !important;
-        break-inside: avoid !important;
-    }
-
-    .card-3d {
-        box-shadow: none !important;
-        transform: none !important;
-    }
-
-    .card-body {
-        padding: 5px !important;
-    }
-
-    .card-title {
-        font-size: 10px !important;
-        margin: 0 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-
-    .display-4 {
-        font-size: 12px !important;
-        margin: 2px 0 !important;
-        font-weight: bold !important;
-    }
-
-    .text-muted {
-        font-size: 8px !important;
-        margin: 0 !important;
-    }
-
-    /* Gráficos */
-    .row:last-child {
-        margin-top: 5px !important;
-        page-break-before: avoid !important;
-    }
-
-    .col-md-8 {
-        width: 60% !important;
-        padding: 2px !important;
-    }
-
-    .col-md-4:last-child {
-        width: 40% !important;
-        padding: 2px !important;
-    }
-
-    .card-header {
-        padding: 3px !important;
-    }
-
-    .card-header h5 {
-        font-size: 10px !important;
-        margin: 0 !important;
-    }
-
-    canvas {
-        height: 120px !important;
-        width: 100% !important;
-    }
-
-    /* Ajustes gerais */
-    * {
-        color: black !important;
-        text-shadow: none !important;
-        background: transparent !important;
-    }
-
-    .fa, .fas {
-        display: none !important;
-    }
-}
-
-/* Estilos dos cards com gradientes */
-.card-gradient-blue {
-    background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(33, 147, 176, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-green {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-purple {
-    background: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(131, 77, 155, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-orange {
-    background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(241, 39, 17, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-indigo {
-    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(75, 108, 183, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-red {
-    background: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(203, 45, 62, 0.3);
-    transition: all 0.3s ease;
-}
-
-.card-gradient-blue:hover,
-.card-gradient-green:hover,
-.card-gradient-purple:hover,
-.card-gradient-orange:hover,
-.card-gradient-indigo:hover,
-.card-gradient-red:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-}
-
-.display-4 {
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin: 1rem 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Ajustes para valores monetários */
-.display-4[data-currency]:before {
-    content: "R$ ";
-    font-size: 0.7em;
-    vertical-align: top;
-    margin-right: 0.2em;
-}
-</style>
-
-<!-- Cabeçalho visível apenas na impressão -->
-<div class="print-header" style="display: none;">
-    <h1>Relatório de Transportes</h1>
-    <p>
-        Período: {{ resumo.data_inicial if resumo.data_inicial else 'Início' }} até {{ resumo.data_final if resumo.data_final else 'Atual' }}
-        {% if resumo.transportadora_selecionada %} | Transportadora: {{ resumo.transportadora_selecionada }}{% endif %}
-        | Gerado em: {{ now.strftime('%d/%m/%Y %H:%M') }}
-    </p>
-</div>
-
+{% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
     // Gráfico de Linha
     const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
     new Chart(ctxLinha, {
         type: 'line',
         data: {
             labels: {{ resumo.grafico_linha.datas | tojson }},
-            datasets: [{
-                label: 'Valor do Frete',
-                data: {{ resumo.grafico_linha.fretes | tojson }},
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1,
-                fill: false
-            }]
+            datasets: [
+                {
+                    label: 'Frete',
+                    data: {{ resumo.grafico_linha.valores.frete | tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Pedágios',
+                    data: {{ resumo.grafico_linha.valores.pedagios | tojson }},
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Despesas',
+                    data: {{ resumo.grafico_linha.valores.despesas | tojson }},
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Abastecimento',
+                    data: {{ resumo.grafico_linha.valores.abastecimento | tojson }},
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Total a Pagar',
+                    data: {{ resumo.grafico_linha.valores.pagar | tojson }},
+                    borderColor: 'rgb(153, 102, 255)',
+                    tension: 0.1
+                }
+            ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return 'R$ ' + value.toFixed(2);
-                        }
-                    }
                 }
             }
         }
@@ -455,46 +177,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gráfico de Pizza
     const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
     new Chart(ctxPizza, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
             labels: {{ resumo.grafico_pizza.labels | tojson }},
             datasets: [{
                 data: {{ resumo.grafico_pizza.valores | tojson }},
                 backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(153, 102, 255)',
+                    'rgb(255, 159, 64)'
                 ]
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: 'top',
                 }
             }
         }
     });
-});
-
-function imprimirRelatorio() {
-    // Pegar valores dos filtros
-    const dataInicial = document.getElementById('data_inicial').value;
-    const dataFinal = document.getElementById('data_final').value;
-    const transportadora = document.getElementById('transportadora').value;
-    
-    // Construir URL com parâmetros
-    let url = '/relatorios/imprimir?';
-    if (dataInicial) url += `data_inicial=${dataInicial}&`;
-    if (dataFinal) url += `data_final=${dataFinal}&`;
-    if (transportadora) url += `transportadora=${encodeURIComponent(transportadora)}`;
-    
-    // Abrir em nova janela
-    window.open(url, '_blank');
-}
 </script>
 {% endblock %}

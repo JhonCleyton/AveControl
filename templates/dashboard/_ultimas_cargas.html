@@ -1,0 +1,27 @@
+{% block ultimas_cargas %}
+<div class="card h-100">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-history"></i>
+            Últimas Cargas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            {% for carga in stats.ultimas_cargas %}
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ carga.numero_carga }}</h6>
+                    <small class="text-muted">{{ carga.criado_em.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <small class="text-muted">Status: {{ carga.status }}</small>
+            </div>
+            {% else %}
+            <div class="list-group-item">
+                <p class="mb-1">Nenhuma carga registrada</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

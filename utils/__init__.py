@@ -1,4 +1,4 @@
-from .filters import prefix_currency
+from .filters import format_currency
 from .permissions import (
     permissao_balanca,
     permissao_producao,

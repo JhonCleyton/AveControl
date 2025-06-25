@@ -9,7 +9,7 @@
                     <h3>Editar Usuário</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form id="editUserForm" onsubmit="return salvarUsuario(event)">
                         <div class="mb-3">
                             <label for="username" class="form-label">Nome de Usuário</label>
                             <input type="text" class="form-control" id="username" name="username" value="{{ user.nome }}" required>
@@ -51,7 +51,7 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                            <a href="{{ url_for('auth.usuarios') }}" class="btn btn-secondary">Cancelar</a>
+                            <a href="{{ url_for('usuarios.index') }}" class="btn btn-secondary">Cancelar</a>
                         </div>
                     </form>
                 </div>
@@ -59,4 +59,45 @@
         </div>
     </div>
 </div>
+
+<script>
+async function salvarUsuario(event) {
+    event.preventDefault();
+    
+    // Pegar valores do formulário
+    const formData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        tipo: document.getElementById('tipo').value,
+        ativo: document.getElementById('ativo').checked
+    };
+
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Sucesso - redirecionar para lista de usuários
+            window.location.href = "{{ url_for('usuarios.index') }}";
+            return false;
+        } else {
+            // Erro - mostrar mensagem
+            alert(data.message || 'Erro ao salvar usuário');
+            return false;
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao salvar usuário. Verifique o console para mais detalhes.');
+        return false;
+    }
+}
+</script>
 {% endblock %}

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Central de Backup{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css" rel="stylesheet">
+<style>
+    .progress-bar {
+        transition: width 1s linear;
+    }
+    #countdown {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #666;
+        text-align: center;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Gerenciamento de Backup</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Criar Backup</h5>
+            <p class="card-text">Crie um backup completo do sistema.</p>
+            <button id="backupBtn" class="btn btn-primary">Criar Backup</button>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Restaurar Backup</h5>
+            
+            {% if backups %}
+            <form id="restoreForm">
+                <div class="form-group">
+                    <label>Selecione o backup:</label>
+                    <div class="list-group" id="backupList">
+                        {% for backup in backups %}
+                        <label class="list-group-item">
+                            <input type="radio" name="backup" value="{{ backup.nome }}" class="me-2">
+                            {{ backup.nome }}
+                            <small class="text-muted">
+                                ({{ (backup.tamanho / 1024 / 1024)|round(2) }} MB - 
+                                {{ backup.data|format_datetime_timestamp }})
+                            </small>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-group mt-3">
+                    <label for="tipo_restauracao">Tipo de Restauração:</label>
+                    <select name="tipo_restauracao" class="form-control">
+                        <option value="completo">Completo (Sistema + Dados)</option>
+                        <option value="dados">Apenas Dados</option>
+                        <option value="sistema">Apenas Sistema</option>
+                    </select>
+                </div>
+                
+                <button type="button" id="restoreBtn" class="btn btn-warning mt-3" disabled>
+                    Restaurar Backup Selecionado
+                </button>
+            </form>
+            {% else %}
+            <p>Nenhum backup disponível.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="progress mt-3" style="display: none;">
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+             role="progressbar" style="width: 0%"></div>
+    </div>
+    <div id="progressText" class="text-center mt-2"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const backupBtn = document.getElementById('backupBtn');
+    const restoreBtn = document.getElementById('restoreBtn');
+    const backupList = document.getElementById('backupList');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressContainer = document.querySelector('.progress');
+    
+    // Função para atualizar o estado do botão de restauração
+    function updateRestoreButton() {
+        const selectedBackup = document.querySelector('input[name="backup"]:checked');
+        restoreBtn.disabled = !selectedBackup;
+    }
+    
+    // Adicionar event listener para os radio buttons
+    const radioButtons = document.querySelectorAll('input[name="backup"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', updateRestoreButton);
+    });
+    
+    // Event listener para o botão de backup
+    backupBtn.addEventListener('click', async function() {
+        try {
+            const result = await Swal.fire({
+                title: 'Criar Backup',
+                text: 'Deseja criar um novo backup do sistema?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, criar',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (!result.isConfirmed) return;
+            
+            backupBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Iniciando backup...';
+            
+            const response = await fetch('{{ url_for("backup.create_system_backup") }}', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao criar backup');
+            }
+            
+            await Swal.fire({
+                title: 'Sucesso!',
+                text: 'Backup criado com sucesso!',
+                icon: 'success'
+            });
+            
+            window.location.reload();
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            Swal.fire({
+                title: 'Erro!',
+                text: error.message || 'Erro ao criar backup',
+                icon: 'error'
+            });
+        } finally {
+            backupBtn.disabled = false;
+            progressContainer.style.display = 'none';
+        }
+    });
+    
+    // Event listener para o botão de restauração
+    restoreBtn.addEventListener('click', async function() {
+        const selectedBackup = document.querySelector('input[name="backup"]:checked');
+        const tipoRestauracao = document.querySelector('select[name="tipo_restauracao"]');
+        
+        if (!selectedBackup) {
+            Swal.fire({
+                title: 'Erro!',
+                text: 'Selecione um backup para restaurar',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        try {
+            const result = await Swal.fire({
+                title: 'Atenção!',
+                text: 'Tem certeza que deseja restaurar este backup? Esta ação não pode ser desfeita.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, restaurar',
+                cancelButtonText: 'Cancelar'
+            });
+            
+            if (!result.isConfirmed) return;
+            
+            restoreBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Iniciando restauração...';
+            
+            const formData = new FormData();
+            formData.append('backup_file', selectedBackup.value);
+            formData.append('tipo_restauracao', tipoRestauracao.value);
+            
+            const response = await fetch('{{ url_for("backup.restore_system_backup") }}', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao restaurar backup');
+            }
+            
+            await Swal.fire({
+                title: 'Sucesso!',
+                text: 'Backup restaurado com sucesso!',
+                icon: 'success'
+            });
+            
+            window.location.reload();
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            Swal.fire({
+                title: 'Erro!',
+                text: error.message || 'Erro ao restaurar backup',
+                icon: 'error'
+            });
+        } finally {
+            restoreBtn.disabled = false;
+            progressContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

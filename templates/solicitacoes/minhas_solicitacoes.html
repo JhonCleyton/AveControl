@@ -46,8 +46,10 @@
                                     <span class="badge bg-warning">Pendente</span>
                                 {% elif solicitacao.status == 'aprovada' %}
                                     <span class="badge bg-success">Aprovada</span>
-                                {% else %}
+                                {% elif solicitacao.status == 'rejeitada' or solicitacao.status == 'reprovada' %}
                                     <span class="badge bg-danger">Reprovada</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Finalizada</span>
                                 {% endif %}
                             </td>
                             <td>

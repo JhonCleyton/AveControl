@@ -1,28 +1,42 @@
 from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
-from models import Usuario, Notificacao, TipoUsuario
+from models import Usuario, Notificacao, TipoUsuario, Carga
 from extensions import db
 
 notificacoes_bp = Blueprint('notificacoes', __name__, url_prefix='/notificacoes')
 
-@notificacoes_bp.route('/nao_lidas')
+@notificacoes_bp.route('/listar')
 @login_required
-def get_notificacoes_nao_lidas():
+def listar():
     """Retorna notificações não lidas do usuário"""
     notificacoes = Notificacao.query.filter_by(
         usuario_id=current_user.id,
         lida=False
     ).order_by(Notificacao.data_criacao.desc()).all()
     
-    return jsonify([{
-        'id': n.id,
-        'tipo': n.tipo,
-        'titulo': n.titulo,
-        'mensagem': n.mensagem,
-        'data_criacao': n.data_criacao.strftime('%d/%m/%Y %H:%M'),
-        'exibir_popup': n.exibir_popup,
-        'carga_id': n.carga_id
-    } for n in notificacoes])
+    return jsonify({
+        'notificacoes': [{
+            'id': n.id,
+            'tipo': n.tipo,
+            'titulo': n.titulo,
+            'mensagem': n.mensagem,
+            'data': n.data_criacao.strftime('%d/%m/%Y %H:%M'),
+            'carga_id': n.carga_id
+        } for n in notificacoes]
+    })
+
+@notificacoes_bp.route('/limpar_todas', methods=['POST'])
+@login_required
+def limpar_todas():
+    """Marca todas as notificações do usuário como lidas"""
+    Notificacao.query.filter_by(
+        usuario_id=current_user.id,
+        lida=False
+    ).update({'lida': True})
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})
 
 @notificacoes_bp.route('/marcar_como_lida/<int:id>', methods=['POST'])
 @login_required
@@ -38,19 +52,6 @@ def marcar_como_lida(id):
     
     return jsonify({'success': True})
 
-@notificacoes_bp.route('/marcar_todas_como_lidas', methods=['POST'])
-@login_required
-def marcar_todas_como_lidas():
-    """Marca todas as notificações do usuário como lidas"""
-    Notificacao.query.filter_by(
-        usuario_id=current_user.id,
-        lida=False
-    ).update({'lida': True})
-    
-    db.session.commit()
-    
-    return jsonify({'success': True})
-
 @notificacoes_bp.route('/<int:id>/marcar_popup', methods=['POST'])
 @login_required
 def marcar_popup(id):
@@ -60,44 +61,62 @@ def marcar_popup(id):
     return jsonify({'success': True})
 
 def notificar_nova_carga(carga):
-    """Notifica usuários sobre nova carga"""
-    # Notifica todos os usuários ativos
+    # Notificar todos os usuários ativos
     usuarios = Usuario.query.filter_by(ativo=True).all()
-    Notificacao.criar_notificacao_nova_carga(carga, usuarios)
+    
+    for usuario in usuarios:
+        Notificacao.criar_notificacao(
+            usuario_id=usuario.id,
+            tipo='carga',
+            titulo='Nova Carga Registrada',
+            mensagem=f'Nova carga {carga.numero_carga} foi registrada.',
+            carga_id=carga.id
+        )
 
 def notificar_producao(carga):
-    """Notifica gerentes sobre produção inserida"""
-    gerentes = Usuario.query.filter_by(
-        tipo=TipoUsuario.GERENTE,
-        ativo=True
-    ).all()
-    Notificacao.criar_notificacao_producao(carga, gerentes)
+    gerentes = Usuario.query.filter_by(tipo='gerente', ativo=True).all()
+    
+    for gerente in gerentes:
+        Notificacao.criar_notificacao(
+            usuario_id=gerente.id,
+            tipo='producao',
+            titulo='Produção Registrada',
+            mensagem=f'Produção da carga {carga.numero_carga} foi registrada.',
+            carga_id=carga.id
+        )
 
 def notificar_fechamento(carga):
-    """Notifica gerentes sobre fechamento inserido"""
-    gerentes = Usuario.query.filter_by(
-        tipo=TipoUsuario.GERENTE,
-        ativo=True
-    ).all()
-    Notificacao.criar_notificacao_fechamento(carga, gerentes)
+    gerentes = Usuario.query.filter_by(tipo='gerente', ativo=True).all()
+    
+    for gerente in gerentes:
+        Notificacao.criar_notificacao(
+            usuario_id=gerente.id,
+            tipo='fechamento',
+            titulo='Fechamento Registrado',
+            mensagem=f'Fechamento da carga {carga.numero_carga} foi registrado.',
+            carga_id=carga.id
+        )
 
 def notificar_cargas_incompletas():
-    """Notifica gerentes sobre cargas incompletas após 24h"""
-    from datetime import datetime, timedelta
-    from models import Carga
+    from datetime import timedelta
     
-    # Busca cargas criadas há mais de 24h e incompletas
-    limite = datetime.utcnow() - timedelta(hours=24)
+    # Buscar cargas incompletas com mais de 24h
     cargas_incompletas = Carga.query.filter(
-        Carga.data_criacao <= limite,
-        Carga.completa == False
+        Carga.status == Carga.STATUS_INCOMPLETA,
+        Carga.criado_em <= (datetime.now() - timedelta(hours=24))
     ).all()
     
-    if cargas_incompletas:
-        gerentes = Usuario.query.filter_by(
-            tipo=TipoUsuario.GERENTE,
-            ativo=True
-        ).all()
-        
+    if not cargas_incompletas:
+        return
+    
+    gerentes = Usuario.query.filter_by(tipo='gerente', ativo=True).all()
+    
+    for gerente in gerentes:
         for carga in cargas_incompletas:
-            Notificacao.criar_notificacao_carga_incompleta(carga, gerentes)
+            Notificacao.criar_notificacao(
+                usuario_id=gerente.id,
+                tipo='carga_incompleta',
+                titulo='Carga Incompleta',
+                mensagem=f'A carga {carga.numero_carga} está incompleta há mais de 24h.',
+                carga_id=carga.id
+            )

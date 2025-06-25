@@ -1,174 +1,327 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Relatório de Transportes - Impressão</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório - AveControl System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
-        /* Reset e configurações básicas */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        @page {
-            size: landscape;
-            margin: 0.5cm;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.2;
-            font-size: 8px;
-            width: 100%;
-            height: 100vh;
-            padding: 5px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Cabeçalho */
-        .cabecalho {
-            text-align: center;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #000;
-        }
-
-        .cabecalho h1 {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .cabecalho p {
-            font-size: 8px;
-            margin: 1px 0;
-        }
-
-        /* Cards de informação */
-        .info-cards {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 3px;
-            margin-bottom: 5px;
-        }
-
-        .card {
-            border: 1px solid #000;
-            padding: 3px;
-            text-align: center;
-            background: #fff;
-        }
-
-        .card h3 {
-            font-size: 8px;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .card .valor {
-            font-size: 10px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        /* Gráficos */
-        .graficos {
-            display: grid;
-            grid-template-columns: 60% 40%;
-            gap: 3px;
-            flex: 1;
-            min-height: 0; /* Importante para o flex */
-            max-height: 130px; /* Altura máxima fixa */
-        }
-
-        .grafico {
-            border: 1px solid #000;
-            padding: 3px;
-            position: relative;
-            height: 100%;
-        }
-
-        .grafico h3 {
-            font-size: 8px;
-            margin-bottom: 2px;
-            text-align: center;
-        }
-
-        canvas {
-            position: absolute !important;
-            top: 15px !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: calc(100% - 15px) !important;
-        }
-
         @media print {
-            html, body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 5px;
+            @page {
+                size: portrait;
+                margin: 1cm;
             }
 
-            .graficos {
+            body {
+                background: url('/static/logo1.jpg') center center no-repeat;
+                background-size: 50%;
+                background-position: center 50%;
+                position: relative;
+            }
+
+            body::after {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                opacity: 0.1;
+                background: url('/static/logo1.jpg') center center no-repeat;
+                background-size: 50%;
+            }
+
+            .container {
+                width: 100% !important;
+                max-width: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .header {
+                text-align: center;
+                padding: 20px 0;
+                border-bottom: 2px solid #333;
+                margin-bottom: 30px;
+            }
+
+            .header img {
+                height: 60px;
+                margin-bottom: 10px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+                margin: 0;
+                color: #333;
+            }
+
+            .header p {
+                font-size: 14px;
+                color: #666;
+                margin: 5px 0;
+            }
+
+            .card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                background: white !important;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .card-title {
+                color: #333 !important;
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+
+            .display-4 {
+                font-size: 20px !important;
+                color: #333 !important;
+                font-weight: bold;
+            }
+
+            .text-white-50 {
+                color: #666 !important;
+                font-size: 12px;
+            }
+
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+                margin: 0 -10px;
+            }
+
+            .col-md-4 {
+                width: 33.33%;
+                padding: 0 10px;
                 page-break-inside: avoid;
             }
 
+            .chart-container {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+
+            .chart-container h5 {
+                font-size: 16px;
+                color: #333;
+                margin-bottom: 10px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #ddd;
+            }
+
             canvas {
-                max-height: none !important;
+                max-width: 100% !important;
+                height: auto !important;
+            }
+
+            /* Informações do filtro */
+            .filtro-info {
+                margin-bottom: 20px;
+                padding: 10px;
+                background: #f8f9fa;
+                border-radius: 5px;
+                font-size: 12px;
+                color: #666;
+            }
+
+            .filtro-info strong {
+                color: #333;
+            }
+
+            /* Rodapé */
+            .footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                padding: 10px 0;
+                text-align: center;
+                font-size: 10px;
+                color: #666;
+                border-top: 1px solid #ddd;
+            }
+
+            /* Esconder elementos desnecessários */
+            .no-print, button, .btn {
+                display: none !important;
+            }
+
+            /* Ajustes para gráficos */
+            #graficoLinha, #graficoPizza {
+                height: 250px !important;
+            }
+
+            .chart-container {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+                height: 300px;
+            }
+
+            /* Ajuste específico para layout de impressão */
+            @media print {
+                .graficos-row {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    gap: 20px;
+                    page-break-inside: avoid;
+                }
+
+                .grafico-col {
+                    width: 50%;
+                }
+            }
+
+            /* Cores específicas para impressão */
+            .card-gradient-blue { background: #f0f7ff !important; }
+            .card-gradient-green { background: #f0fff4 !important; }
+            .card-gradient-purple { background: #fdf0ff !important; }
+            .card-gradient-orange { background: #fff7f0 !important; }
+            .card-gradient-indigo { background: #f0f2ff !important; }
+            .card-gradient-red { background: #fff0f0 !important; }
+        }
+
+        /* Estilos para visualização na tela */
+        @media screen {
+            body {
+                padding: 20px 0;
+                background: #f8f9fa;
+            }
+
+            .container {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
             }
         }
     </style>
 </head>
 <body>
-    <div class="cabecalho">
-        <h1>Relatório de Transportes</h1>
-        <p>
-            Período: {{ resumo.data_inicial if resumo.data_inicial else 'Início' }} até {{ resumo.data_final if resumo.data_final else 'Atual' }}
-            {% if resumo.transportadora_selecionada %} | Transportadora: {{ resumo.transportadora_selecionada }}{% endif %}
-            | Gerado em: {{ now.strftime('%d/%m/%Y %H:%M') }}
-        </p>
-    </div>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <img src="/static/logo1.jpg" alt="AveControl System">
+            <h1>Relatório de Cargas</h1>
+            <p>Período: {{ resumo.data_inicial if resumo.data_inicial else 'Início' }} até {{ resumo.data_final if resumo.data_final else 'Atual' }}</p>
+            <p>Transportadora: {{ resumo.transportadora_selecionada }}</p>
+        </div>
 
-    <div class="info-cards">
-        <div class="card">
-            <h3>Total de Cargas</h3>
-            <p class="valor">{{ resumo.total_cargas }}</p>
+        <!-- Informações do filtro -->
+        <div class="filtro-info">
+            <strong>Filtros aplicados:</strong><br>
+            Data Inicial: {{ resumo.data_inicial if resumo.data_inicial else 'Início' }}<br>
+            Data Final: {{ resumo.data_final if resumo.data_final else 'Atual' }}<br>
+            Transportadora: {{ resumo.transportadora_selecionada }}
         </div>
-        <div class="card">
-            <h3>Abastecimento Médio</h3>
-            <p class="valor">R$ {{ "%.2f"|format(resumo.abastecimento_medio) }}</p>
-        </div>
-        <div class="card">
-            <h3>Abastecimento Total</h3>
-            <p class="valor">R$ {{ "%.2f"|format(resumo.abastecimento_total) }}</p>
-        </div>
-        <div class="card">
-            <h3>Frete Médio</h3>
-            <p class="valor">R$ {{ "%.2f"|format(resumo.frete_medio) }}</p>
-        </div>
-        <div class="card">
-            <h3>Frete Total</h3>
-            <p class="valor">R$ {{ "%.2f"|format(resumo.frete_total) }}</p>
-        </div>
-        <div class="card">
-            <h3>Valor a Pagar Total</h3>
-            <p class="valor">R$ {{ "%.2f"|format(resumo.valor_pagar_total) }}</p>
-        </div>
-    </div>
 
-    <div class="graficos">
-        <div class="grafico">
-            <h3>Evolução do Frete</h3>
-            <canvas id="graficoLinha"></canvas>
+        <!-- Cards com informações -->
+        <div class="row mb-4">
+            <!-- Card 1 - Total de Cargas -->
+            <div class="col-md-4">
+                <div class="card card-gradient-blue">
+                    <div class="card-body">
+                        <h5 class="card-title">Total de Cargas</h5>
+                        <div class="display-4">{{ resumo.total_cargas }}</div>
+                        <p class="text-white-50">no período selecionado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 - Abastecimento Médio -->
+            <div class="col-md-4">
+                <div class="card card-gradient-green">
+                    <div class="card-body">
+                        <h5 class="card-title">Abastecimento Médio</h5>
+                        <div class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_medio) }}</div>
+                        <p class="text-white-50">por carga</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 - Abastecimento Total -->
+            <div class="col-md-4">
+                <div class="card card-gradient-purple">
+                    <div class="card-body">
+                        <h5 class="card-title">Abastecimento Total</h5>
+                        <div class="display-4">R$ {{ "%.2f"|format(resumo.abastecimento_total) }}</div>
+                        <p class="text-white-50">no período</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 - Frete Médio -->
+            <div class="col-md-4">
+                <div class="card card-gradient-orange">
+                    <div class="card-body">
+                        <h5 class="card-title">Frete Médio</h5>
+                        <div class="display-4">R$ {{ "%.2f"|format(resumo.frete_medio) }}</div>
+                        <p class="text-white-50">por carga</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5 - Frete Total -->
+            <div class="col-md-4">
+                <div class="card card-gradient-indigo">
+                    <div class="card-body">
+                        <h5 class="card-title">Frete Total</h5>
+                        <div class="display-4">R$ {{ "%.2f"|format(resumo.frete_total) }}</div>
+                        <p class="text-white-50">no período</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6 - Valor a Pagar Total -->
+            <div class="col-md-4">
+                <div class="card card-gradient-red">
+                    <div class="card-body">
+                        <h5 class="card-title">Valor a Pagar Total</h5>
+                        <div class="display-4">R$ {{ "%.2f"|format(resumo.valor_pagar_total) }}</div>
+                        <p class="text-white-50">no período</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="grafico">
-            <h3>Distribuição de Gastos</h3>
-            <canvas id="graficoPizza"></canvas>
+
+        <!-- Gráficos -->
+        <div class="graficos-row">
+            <div class="grafico-col">
+                <div class="chart-container">
+                    <h5>Evolução do Frete</h5>
+                    <canvas id="graficoLinha"></canvas>
+                </div>
+            </div>
+            <div class="grafico-col">
+                <div class="chart-container">
+                    <h5>Distribuição de Gastos</h5>
+                    <canvas id="graficoPizza"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>Relatório gerado em {{ now.strftime('%d/%m/%Y %H:%M') }} - AveControl System</p>
+            <p> 2024 AveControl System. Todos os direitos reservados.</p>
         </div>
     </div>
 

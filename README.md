@@ -10,6 +10,10 @@ Sistema web para gerenciamento e controle de cargas de aves, desenvolvido com Fl
 - Geração de relatórios
 - Dashboard com indicadores
 - Chat integrado
+- Sistema de Solicitações e Aprovações
+- Controle de Acesso Avançado
+- Histórico e Rastreabilidade
+- Segurança
 
 ## Requisitos
 
@@ -78,10 +82,10 @@ AveControl/
   <h2>JC Bytes - Solução em Tecnologia</h2>
   <p><em>Excelência em Desenvolvimento de Software</em></p>
   
-  [![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/jhon97cleyton)
-  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Jhon-freite)
+  [![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/jc.devops)
+  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Jhon-freire)
   [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/JhonCleyton)
-  [![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5573981723483)
+  [![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/5573998547885)
 </div>
 
 ## 📋 Sumário
@@ -169,6 +173,62 @@ O AveControl é um sistema profissional desenvolvido pela JC Bytes, focado na ge
   - Geração de PDFs
   - APIs para integração
   - Backup em nuvem (opcional)
+
+### Sistema de Solicitações e Aprovações
+- **Solicitações de Revisão**
+  - Envio de solicitações para diferentes setores
+  - Especificação detalhada do motivo
+  - Acompanhamento do status da solicitação
+  - Notificações de aprovação/rejeição
+
+- **Solicitações de Exclusão**
+  - Processo seguro de solicitação de exclusão
+  - Múltiplos níveis de aprovação
+  - Registro de motivos e justificativas
+  - Histórico completo de solicitações
+
+- **Autorizações e Verificações**
+  - Fluxo de aprovação por setor
+  - Verificação em múltiplas etapas
+  - Registro de aprovadores
+  - Histórico de autorizações
+
+### Controle de Acesso Avançado
+- **Permissões por Setor**
+  - Balança
+  - Produção
+  - Fechamento
+  - Diretoria
+- **Ações Específicas por Perfil**
+  - Visualização
+  - Edição
+  - Aprovação
+  - Autorização
+
+### Histórico e Rastreabilidade
+- **Registro Detalhado**
+  - Log de todas as ações
+  - Histórico de modificações
+  - Rastreamento de solicitações
+  - Registro de aprovações
+
+- **Auditoria**
+  - Quem fez cada ação
+  - Quando foi feito
+  - Motivo da alteração
+  - Status das solicitações
+
+### Segurança
+- **Proteção contra CSRF**
+  - Tokens de segurança
+  - Validação de requisições
+  - Proteção contra ataques
+
+- **Validações**
+  - Campos obrigatórios
+  - Formatos específicos
+  - Regras de negócio
+  - Consistência de dados
 
 ## 💻 Requisitos do Sistema
 
@@ -280,4 +340,81 @@ python run.py
 <div align="center">
   <p> 2025 JC Bytes - Solução em Tecnologia. Todos os direitos reservados.</p>
   <p>Desenvolvido por <a href="https://github.com/JhonCleyton">Jhon Cleyton</a> com e dedicação</p>
+</div>
+
+## 🔄 Fluxo de Trabalho
+
+### Processo de Carga
+1. Cadastro inicial na balança
+2. Verificação pela produção
+3. Fechamento financeiro
+4. Autorização final
+
+### Solicitações
+1. Usuário envia solicitação
+2. Setor responsável analisa
+3. Aprovação ou rejeição
+4. Notificação ao solicitante
+
+## 🛠 Configuração
+
+### Configuração de E-mail
+```python
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USERNAME = 'seu-email@gmail.com'
+MAIL_PASSWORD = 'sua-senha'
+```
+
+### Configuração de Backup
+```python
+BACKUP_INTERVAL = 12  # horas
+BACKUP_RETENTION = 15  # dias
+BACKUP_PATH = '/path/to/backup'
+```
+
+## 📱 Compatibilidade
+
+- **Desktop**
+  - Windows 10/11
+  - Linux
+  - macOS
+
+- **Navegadores**
+  - Google Chrome 90+
+  - Mozilla Firefox 88+
+  - Microsoft Edge 90+
+  - Safari 14+
+
+## 🔒 Segurança e Backup
+
+### Política de Senhas
+- Mínimo 8 caracteres
+- Combinação de letras e números
+- Caracteres especiais obrigatórios
+- Troca periódica recomendada
+
+### Backup Automático
+- Backup diário às 00:00 e 12:00
+- Retenção de 15 dias
+- Compactação automática
+- Verificação de integridade
+
+## 🆘 Suporte
+
+Para suporte técnico ou dúvidas:
+- E-mail: suporte@jcbytes.com.br
+- WhatsApp: (73) 98172-3483
+- Horário: Segunda a Sexta, 08:00 às 18:00
+
+## 📝 Licença
+
+Este software é propriedade da JC Bytes e seu uso é restrito aos termos do contrato de licença.
+
+---
+
+<div align="center">
+  <p>Desenvolvido por JC Bytes</p>
+  <p><small>Versão 1.0.0 - Janeiro 2024</small></p>
 </div>

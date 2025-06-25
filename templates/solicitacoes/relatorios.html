@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Relatórios de Solicitações</h2>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Filtros</h5>
+            <form id="filtroForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim">
+                </div>
+                <div class="col-md-3">
+                    <label for="setor" class="form-label">Setor</label>
+                    <select class="form-select" id="setor" name="setor">
+                        <option value="">Todos</option>
+                        <option value="balanca">Balança</option>
+                        <option value="producao">Produção</option>
+                        <option value="fechamento">Fechamento</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">Tipo</label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos</option>
+                        <option value="revisao">Revisão</option>
+                        <option value="edicao">Edição</option>
+                        <option value="exclusao">Exclusão</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico por Setor -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Solicitações por Setor</h5>
+                    <canvas id="graficoSetor"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico por Tipo -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Solicitações por Tipo</h5>
+                    <canvas id="graficoTipo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico Top Solicitantes -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Top 10 Solicitantes</h5>
+                    <canvas id="graficoSolicitantes"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico Evolução Mensal -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Evolução Mensal</h5>
+                    <canvas id="graficoMensal"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const cores = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF9F40'
+];
+
+// Dados iniciais
+const statsSetor = {{ stats_setor|tojson|safe }};
+const statsTipo = {{ stats_tipo|tojson|safe }};
+const statsSolicitante = {{ stats_solicitante|tojson|safe }};
+const statsMensais = {{ stats_mensais|tojson|safe }};
+
+// Configuração dos gráficos
+let graficoSetor = new Chart(document.getElementById('graficoSetor'), {
+    type: 'pie',
+    data: {
+        labels: statsSetor.map(s => s.setor === 'balanca' ? 'Balança' : 
+                              s.setor === 'producao' ? 'Produção' : 
+                              s.setor === 'fechamento' ? 'Fechamento' : s.setor),
+        datasets: [{
+            data: statsSetor.map(s => s.total),
+            backgroundColor: cores
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+let graficoTipo = new Chart(document.getElementById('graficoTipo'), {
+    type: 'pie',
+    data: {
+        labels: statsTipo.map(t => t.tipo === 'revisao' ? 'Revisão' :
+                             t.tipo === 'edicao' ? 'Edição' :
+                             t.tipo === 'exclusao' ? 'Exclusão' : t.tipo),
+        datasets: [{
+            data: statsTipo.map(t => t.total),
+            backgroundColor: cores
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+let graficoSolicitantes = new Chart(document.getElementById('graficoSolicitantes'), {
+    type: 'bar',
+    data: {
+        labels: statsSolicitante.map(s => s.nome),
+        datasets: [{
+            label: 'Quantidade de Solicitações',
+            data: statsSolicitante.map(s => s.total),
+            backgroundColor: cores[0]
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+let graficoMensal = new Chart(document.getElementById('graficoMensal'), {
+    type: 'line',
+    data: {
+        labels: statsMensais.map(m => {
+            const [ano, mes] = m.mes.split('-');
+            return `${mes}/${ano}`;
+        }),
+        datasets: [{
+            label: 'Quantidade de Solicitações',
+            data: statsMensais.map(m => m.total),
+            borderColor: cores[0],
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Atualização dos gráficos com filtros
+document.getElementById('filtroForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        data_inicio: formData.get('data_inicio'),
+        data_fim: formData.get('data_fim'),
+        setor: formData.get('setor'),
+        tipo: formData.get('tipo')
+    };
+    
+    try {
+        const response = await fetch('/solicitacoes/api/stats/filtradas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) throw new Error('Erro ao buscar dados');
+        
+        const stats = await response.json();
+        
+        // Atualizar gráfico por setor
+        graficoSetor.data.labels = stats.stats_setor.map(s => 
+            s.setor === 'balanca' ? 'Balança' : 
+            s.setor === 'producao' ? 'Produção' : 
+            s.setor === 'fechamento' ? 'Fechamento' : s.setor
+        );
+        graficoSetor.data.datasets[0].data = stats.stats_setor.map(s => s.total);
+        graficoSetor.update();
+        
+        // Atualizar gráfico por tipo
+        graficoTipo.data.labels = stats.stats_tipo.map(t => 
+            t.tipo === 'revisao' ? 'Revisão' :
+            t.tipo === 'edicao' ? 'Edição' :
+            t.tipo === 'exclusao' ? 'Exclusão' : t.tipo
+        );
+        graficoTipo.data.datasets[0].data = stats.stats_tipo.map(t => t.total);
+        graficoTipo.update();
+        
+        // Atualizar gráfico de solicitantes
+        graficoSolicitantes.data.labels = stats.stats_solicitante.map(s => s.nome);
+        graficoSolicitantes.data.datasets[0].data = stats.stats_solicitante.map(s => s.total);
+        graficoSolicitantes.update();
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar os gráficos');
+    }
+});
+</script>
+{% endblock %}

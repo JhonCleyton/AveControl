@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="Jhon Cleyton">
+    <meta name="developer" content="JC Bytes - Soluções em Tecnologia">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo2.png') }}">
+    <title>{% block title %}AveControl{% endblock title %} | JC Bytes</title>
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --body-bg: #f8f9fa;
+            --text-color: #212529;
+            --card-bg: #ffffff;
+            --card-header-bg: #f8f9fa;
+            --navbar-bg: #343a40;
+            --navbar-text: #ffffff;
+            --link-color: #0d6efd;
+            --border-color: rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --input-text: #212529;
+        }
+
+        /* Estilos base */
+        body {
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+        }
+
+        /* Container principal */
+        .main-container {
+            flex: 1;
+            padding: 15px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Cards */
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--border-color);
+            margin-bottom: 1rem;
+            border: none;
+            background-color: var(--card-bg);
+        }
+
+        .card-header {
+            background-color: var(--card-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem;
+            color: var(--text-color);
+        }
+
+        .card-body {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* Inputs */
+        .form-control {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            border-color: var(--border-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        /* Links */
+        a {
+            color: var(--link-color);
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--navbar-bg) !important;
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--navbar-text);
+        }
+
+        /* Tabelas */
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+            margin: 0;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background-color: var(--card-header-bg);
+            font-weight: 600;
+        }
+
+        /* Botões */
+        .btn {
+            font-weight: 500;
+            border-radius: 6px;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--navbar-bg);
+            color: rgba(255, 255, 255, 0.75);
+            padding: 0.8rem 0;
+            margin-top: auto;
+        }
+        
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            margin: 0 5px;
+        }
+        
+        .footer a:hover {
+            color: #2980b9;
+        }
+
+        .footer i {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+        }
+
+        .footer i:hover {
+            transform: scale(1.2);
+        }
+        
+        .footer .social-icons {
+            display: inline-block;
+            margin-left: 15px;
+        }
+        
+        .footer .social-icons a {
+            color: rgba(255, 255, 255, 0.75);
+            margin: 0 8px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        
+        .footer .social-icons a:hover {
+            color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        /* Marca d'água (logo) */
+        .background-logo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: -1;
+            max-width: 80%;
+            height: auto;
+        }
+
+        /* Notificações */
+        .notification-menu {
+            padding: 0;
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+
+        .notification-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .notification-item .btn-link {
+            padding: 0;
+            color: #dc3545;
+        }
+
+        .notification-item .btn-link:hover {
+            color: #bb2d3b;
+        }
+
+        .badge {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+
+        .position-absolute.top-0.start-100.translate-middle {
+            transform: translate(-50%, -50%);
+        }
+
+        @media (max-width: 300px) {
+            body { 
+                font-size: 13px; 
+            }
+            
+            .main-container { 
+                padding: 10px; 
+            }
+            
+            .table th, .table td { 
+                padding: 0.5rem;
+                font-size: 0.8125rem;
+            }
+            
+            .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .card-header { 
+                padding: 0.75rem; 
+            }
+            
+            .card-body { 
+                padding: 0.75rem; 
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            
+            .navbar-brand img {
+                height: 24px;
+            }
+            
+            .h1, h1 { font-size: 1.5rem; }
+            .h2, h2 { font-size: 1.25rem; }
+            .h3, h3 { font-size: 1.125rem; }
+            .h4, h4 { font-size: 1rem; }
+            
+            .table-responsive {
+                border: 0;
+            }
+        }
+
+        /* Notificações */
+        #chat-badge {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            padding: 3px 6px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.75rem;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-item .notification-title {
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+
+        .notification-item .notification-time {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .notification-item.unread {
+            background-color: #e3f2fd;
+        }
+
+        .notification-item.unread:hover {
+            background-color: #bbdefb;
+        }
+    </style>
+    {% block extra_css %}{% endblock extra_css %}
+</head>
+<body data-theme="{{ current_user.tema if current_user.is_authenticated else 'claro' }}">
+    <!-- Logo de fundo -->
+    {% if current_user.is_authenticated %}
+    <img src="{{ url_for('static', filename='logo1.jpg') }}" class="background-logo" alt="Logo">
+    {% endif %}
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid px-3 px-sm-4">
+            <a class="navbar-brand" href="{{ url_for('auth.index') }}">
+                <img src="{{ url_for('static', filename='logo2.png') }}" alt="AveControl Logo" style="height: 30px; margin-right: 10px;">
+                AveControl
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                        <!-- Menu de Cargas -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="cargasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-truck-loading"></i> Cargas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="cargasDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.index') }}"><i class="fas fa-list"></i> Lista de Cargas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.minhas_solicitacoes') }}"><i class="fas fa-history"></i> Minhas Solicitações</a></li>
+                                {% if current_user.tipo == 'balanca' %}
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.nova_carga') }}"><i class="fas fa-plus"></i> Nova Carga</a></li>
+                                {% endif %}
+                                {% if current_user.tipo == 'fechamento' %}
+                                <li><a class="dropdown-item" href="{{ url_for('cargas.fechamento_carga') }}"><i class="fas fa-file-invoice-dollar"></i> Fechamento</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
+                        {% if current_user.tipo in ['financeiro', 'transportadora'] %}
+                        <!-- Menu Financeiro -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="financeiroDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-file-invoice-dollar"></i> Financeiro
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="financeiroDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('resumos.index') }}"><i class="fas fa-chart-line"></i> Resumos</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.tipo == 'gerente' %}
+                        <!-- Menu de Gerenciamento -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="gerenciamentoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cogs"></i> Gerenciamento
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="gerenciamentoDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.listar_solicitacoes') }}"><i class="fas fa-tasks"></i> Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.minhas_solicitacoes') }}"><i class="fas fa-history"></i> Minhas Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('solicitacoes.relatorios') }}"><i class="fas fa-chart-bar"></i> Relatórios de Solicitações</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('usuarios.index') }}"><i class="fas fa-users"></i> Usuários</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('backup.backup_central') }}"><i class="fas fa-database"></i> Central de Backup</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('documentos.listar_solicitacoes_exclusao') }}"><i class="fas fa-file-alt"></i> Documentos Pendentes</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- Menu de Relatórios -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-chart-bar"></i> Relatórios
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.index') }}"><i class="fas fa-truck"></i> Relatório de Cargas</a></li>
+                                {% if current_user.tipo in ['gerente', 'diretoria'] %}
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.imprimir') }}"><i class="fas fa-print"></i> Imprimir Relatório</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('resumos.index') }}"><i class="fas fa-calendar-alt"></i> Resumos</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
+                        <!-- Link de Produção -->
+                        {% if current_user.tipo in ['producao'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('cargas.producao') }}">
+                                    <i class="fas fa-clipboard-list"></i> Produção
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <!-- Link de Chat -->
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="{{ url_for('chat.index') }}">
+                                <i class="fas fa-comments"></i> Chat
+                                <span id="chat-badge" class="badge rounded-pill bg-danger"></span>
+                            </a>
+                        </li>
+
+                        <!-- Notificações -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificacoesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <span id="notificacoes-badge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle"></span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="notificacoesDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                <div id="notificacoes-menu">
+                                    <!-- As notificações serão inseridas aqui via JavaScript -->
+                                </div>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+
+                <!-- Menu do Usuário -->
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user"></i> {{ current_user.nome }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('perfil.perfil_view') }}">
+                                    <i class="fas fa-user-circle"></i> Meu Perfil
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Sair
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Content -->
+    <div class="container-fluid mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="mb-0">2025 JC Bytes - Solução em Tecnologia. Todos os direitos reservados. | Desenvolvido por <a href="https://github.com/JhonCleyton">Jhon Cleyton</a> <span class="social-icons"><a href="mailto:jhon.freire@ftc.edu.br" title="Email"><i class="fas fa-envelope"></i></a><a href="https://wa.me/5573981723483" title="WhatsApp"><i class="fab fa-whatsapp"></i></a><a href="https://github.com/JhonCleyton" title="GitHub"><i class="fab fa-github"></i></a><a href="https://linkedin.com/in/jhon-freire" title="LinkedIn"><i class="fab fa-linkedin"></i></a></span></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+        // Configuração do Toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+        
+        // Configuração do CSRF token para todas as requisições AJAX
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", document.querySelector('meta[name="csrf-token"]').content);
+                }
+            }
+        });
+
+        // Sistema global de notificações
+        const notificacoes = {
+            intervalo: null,
+            
+            inicializar() {
+                this.atualizarNotificacoes();
+                this.intervalo = setInterval(() => this.atualizarNotificacoes(), 10000);
+            },
+            
+            atualizarNotificacoes() {
+                $.ajax({
+                    url: '/notificacoes/listar',
+                    method: 'GET',
+                    success: (response) => {
+                        const badge = $('#notificacoes-badge');
+                        const notificacoesMenu = $('#notificacoes-menu');
+                        
+                        // Atualizar o badge com o número de notificações
+                        if (response.notificacoes.length > 0) {
+                            badge.text(response.notificacoes.length);
+                            badge.show();
+                        } else {
+                            badge.hide();
+                        }
+                        
+                        // Atualizar o menu dropdown
+                        notificacoesMenu.empty();
+                        
+                        if (response.notificacoes.length > 0) {
+                            response.notificacoes.forEach(notif => {
+                                const item = `
+                                    <div class="notification-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>${notif.titulo}</strong>
+                                                <p class="mb-1">${notif.mensagem}</p>
+                                                <small class="text-muted">${notif.data}</small>
+                                            </div>
+                                            <button class="btn btn-link p-0" onclick="notificacoes.marcarComoLida(${notif.id})">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                                notificacoesMenu.append(item);
+                            });
+                            
+                            // Adicionar botão para limpar todas
+                            const limparTodas = `
+                                <div class="p-2 text-center">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="notificacoes.limparTodas()">
+                                        Limpar Todas
+                                    </button>
+                                </div>
+                            `;
+                            notificacoesMenu.append(limparTodas);
+                        } else {
+                            notificacoesMenu.append('<div class="p-3 text-center text-muted">Nenhuma notificação</div>');
+                        }
+                    }
+                });
+            },
+            
+            marcarComoLida(id) {
+                $.ajax({
+                    url: `/notificacoes/marcar_como_lida/${id}`,
+                    method: 'POST',
+                    success: (response) => {
+                        if (response.success) {
+                            this.atualizarNotificacoes();
+                        }
+                    }
+                });
+            },
+            
+            limparTodas() {
+                $.ajax({
+                    url: '/notificacoes/limpar_todas',
+                    method: 'POST',
+                    success: (response) => {
+                        if (response.success) {
+                            this.atualizarNotificacoes();
+                        }
+                    }
+                });
+            }
+        };
+
+        // Sistema global de notificações do chat
+        const chatNotificacoes = {
+            intervalo: null,
+            
+            inicializar() {
+                this.atualizarNotificacoes();
+                // Atualizar a cada 10 segundos
+                this.intervalo = setInterval(() => this.atualizarNotificacoes(), 10000);
+                
+                // Adicionar listener para o dropdown de chat
+                $('#chatDropdown').on('show.bs.dropdown', () => {
+                    // Carregar e marcar mensagens como lidas
+                    this.carregarMensagens();
+                });
+            },
+            
+            carregarMensagens() {
+                // Carregar mensagens do grupo
+                $.ajax({
+                    url: '/chat/mensagens_grupo',
+                    method: 'GET',
+                    success: (response) => {
+                        // Atualizar badge após carregar mensagens
+                        this.atualizarNotificacoes();
+                    }
+                });
+                
+                // Carregar mensagens individuais para cada usuário
+                $('.chat-list-item[id^="chat-"]').each((i, el) => {
+                    const userId = el.id.replace('chat-', '');
+                    if (userId !== 'grupo') {
+                        $.ajax({
+                            url: `/chat/mensagens_individuais/${userId}`,
+                            method: 'GET',
+                            success: (response) => {
+                                // Atualizar badge após carregar mensagens
+                                this.atualizarNotificacoes();
+                            }
+                        });
+                    }
+                });
+            },
+            
+            atualizarNotificacoes() {
+                $.ajax({
+                    url: '/chat/notificacoes',
+                    method: 'GET',
+                    success: function(response) {
+                        const badge = $('#chat-badge');
+                        if (response.nao_lidas > 0) {
+                            badge.text(response.nao_lidas);
+                            badge.show();
+                        } else {
+                            badge.hide();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Erro ao buscar notificações do chat:', error);
+                    }
+                });
+            }
+        };
+
+        // Funções globais
+        function marcarComoLida(id) {
+            notificacoes.marcarComoLida(id);
+        }
+
+        function limparNotificacoes() {
+            notificacoes.limparTodas();
+        }
+
+        // Inicializar sistemas quando o documento estiver pronto
+        $(document).ready(function() {
+            if ({{ current_user.is_authenticated|tojson }}) {
+                notificacoes.inicializar();
+                chatNotificacoes.inicializar();
+            }
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

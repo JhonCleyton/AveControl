@@ -6,17 +6,27 @@
         <i class="fas fa-file-invoice-dollar"></i> Resumo de Transportes
     </h2>
 
-    <!-- Filtro de Transportadora -->
+    <!-- Filtros -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="get" class="row align-items-center">
+            <form method="get" class="row g-3 align-items-end">
+                <!-- Filtro de Transportadora -->
+                <div class="col-md-3">
+                    <label for="produtor" class="form-label">Produtor:</label>
+                    <select name="produtor" id="produtor" class="form-select">
+                        <option value="">Todos os Produtores</option>
+                        {% for prod in resumo.produtores %}
+                        <option value="{{ prod }}" {% if prod == resumo.produtor_selecionado %}selected{% endif %}>{{ prod }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="col-md-4">
                     <label for="transportadora" class="form-label">Transportadora:</label>
                     {% if current_user.tipo == 'transportadora' %}
                         <input type="hidden" name="transportadora" value="Ellen Transportes">
                         <input type="text" class="form-control" value="Ellen Transportes" disabled>
                     {% else %}
-                        <select name="transportadora" id="transportadora" class="form-select" onchange="this.form.submit()">
+                        <select name="transportadora" id="transportadora" class="form-select">
                             <option value="">Todas as Transportadoras</option>
                             {% for transp in resumo.transportadoras %}
                             <option value="{{ transp }}" {% if transp == resumo.transportadora_selecionada %}selected{% endif %}>
@@ -25,6 +35,27 @@
                             {% endfor %}
                         </select>
                     {% endif %}
+                </div>
+
+                <!-- Filtro de Data Inicial -->
+                <div class="col-md-3">
+                    <label for="data_inicial" class="form-label">Data de Abate - Início:</label>
+                    <input type="date" class="form-control" id="data_inicial" name="data_inicial" 
+                           value="{{ resumo.data_inicial }}">
+                </div>
+
+                <!-- Filtro de Data Final -->
+                <div class="col-md-3">
+                    <label for="data_final" class="form-label">Data de Abate - Fim:</label>
+                    <input type="date" class="form-control" id="data_final" name="data_final"
+                           value="{{ resumo.data_final }}">
+                </div>
+
+                <!-- Botão de Filtrar -->
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
                 </div>
             </form>
         </div>
@@ -38,7 +69,7 @@
                     <h5 class="card-title text-primary">
                         <i class="fas fa-truck"></i> Total em Fretes
                     </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.fretes) }}</h3>
+                    <h3>{{ resumo.total_fretes | format_currency }}</h3>
                 </div>
             </div>
         </div>
@@ -47,9 +78,9 @@
             <div class="card h-100">
                 <div class="card-body text-center">
                     <h5 class="card-title text-warning">
-                        <i class="fas fa-road"></i> Total em Pedágios
+                        <i class="fas fa-road"></i> Total em Adiantantos
                     </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.pedagios) }}</h3>
+                    <h3>{{ resumo.total_adiantamentos | format_currency }}</h3>
                 </div>
             </div>
         </div>
@@ -58,44 +89,9 @@
             <div class="card h-100">
                 <div class="card-body text-center">
                     <h5 class="card-title text-info">
-                        <i class="fas fa-receipt"></i> Outras Despesas
+                        <i class="fas fa-receipt"></i> Total em Outras Despesas
                     </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.outras_despesas) }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-success">
-                        <i class="fas fa-gas-pump"></i> Total em Abastecimento
-                    </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.abastecimento) }}</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-danger">
-                        <i class="fas fa-hand-holding-usd"></i> Adiantamentos
-                    </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.adiantamentos) }}</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-success">
-                        <i class="fas fa-money-bill-wave"></i> Total a Pagar
-                    </h5>
-                    <h3>R$ {{ "%.2f"|format(resumo.totais.pagar) }}</h3>
+                    <h3>{{ resumo.total_outras_despesas | format_currency }}</h3>
                 </div>
             </div>
         </div>
@@ -108,44 +104,71 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table id="tabela-cargas" class="table table-striped table-hover">
+                <table id="resumoTable" class="table table-striped table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th scope="col">Data Abate</th>
-                            <th scope="col">Nº Carga</th>
-                            <th scope="col">Transportadora</th>
-                            <th scope="col">Valor Frete</th>
-                            <th scope="col">Pedágios</th>
-                            <th scope="col">Outras Despesas</th>
-                            <th scope="col">Abastecimento</th>
-                            <th scope="col">Adiantamento</th>
-                            <th scope="col">Valor a Pagar</th>
+                            <th>Data Abate</th>
+                            <th>Nº Carga</th>
+                            <th>Produtor</th>
+                            <th>Transportadora</th>
+                            <th>Placa</th>
+                            <th>Valor Frete</th>
+                            <th>Adiantamentos</th>
+                            <th>Outras Despesas</th>
+                            <th>Abastecimento Total</th>
+                            <th>Total a Pagar</th>
+                            <th>Status</th>
+                            {% if current_user.tipo == 'financeiro' %}
+                            <th>Ações</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for carga in resumo.cargas %}
                         <tr>
-                            <td data-order="{{ carga.data_abate.strftime('%Y%m%d') }}">{{ carga.data_abate.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ carga.data_abate.strftime('%d/%m/%Y') }}</td>
                             <td>{{ carga.numero_carga }}</td>
+                            <td>{{ carga.produtor }}</td>
                             <td>{{ carga.transportadora }}</td>
-                            <td data-order="{{ carga.valor_frete or 0 }}">R$ {{ "%.2f"|format(carga.valor_frete or 0) }}</td>
-                            <td data-order="{{ carga.pedagios or 0 }}">R$ {{ "%.2f"|format(carga.pedagios or 0) }}</td>
-                            <td data-order="{{ carga.outras_despesas or 0 }}">R$ {{ "%.2f"|format(carga.outras_despesas or 0) }}</td>
-                            <td data-order="{{ (carga.abastecimento_empresa or 0) + (carga.abastecimento_posto or 0) }}">R$ {{ "%.2f"|format((carga.abastecimento_empresa or 0) + (carga.abastecimento_posto or 0)) }}</td>
-                            <td data-order="{{ carga.adiantamento or 0 }}">R$ {{ "%.2f"|format(carga.adiantamento or 0) }}</td>
-                            <td data-order="{{ carga.valor_pagar or 0 }}">R$ {{ "%.2f"|format(carga.valor_pagar or 0) }}</td>
+                            <td>{{ carga.placa_veiculo }}</td>
+                            <td>{{ carga.valor_frete | format_currency }}</td>
+                            <td>{{ carga.adiantamento | format_currency }}</td>
+                            <td>{{ carga.outras_despesas | format_currency }}</td>
+                            <td>{{ carga.abastecimento_total | format_currency }}</td>
+                            <td>{{ carga.valor_pagar | format_currency }}</td>
+                            <td>
+                                {% if carga.nota_autorizada %}
+                                    <span class="badge bg-success">Autorizada</span>
+                                {% elif carga.nota_aprovada %}
+                                    <span class="badge bg-info">Aprovada</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.tipo == 'financeiro' %}
+                            <td>
+                                {% if not carga.nota_aprovada %}
+                                <button onclick="aprovarNota('{{ carga.id }}')" class="btn btn-sm btn-success" title="Aprovar Nota">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="3">Totais:</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.fretes) }}</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.pedagios) }}</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.outras_despesas) }}</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.abastecimento) }}</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.adiantamentos) }}</th>
-                            <th>R$ {{ "%.2f"|format(resumo.totais.pagar) }}</th>
+                            <th colspan="5">Totais:</th>
+                            <th>{{ resumo.total_fretes | format_currency }}</th>
+                            <th>{{ resumo.total_adiantamentos | format_currency }}</th>
+                            <th>{{ resumo.total_outras_despesas | format_currency }}</th>
+                            <th>{{ resumo.total_abastecimento | format_currency }}</th>
+                            <th>{{ resumo.total_pagar | format_currency }}</th>
+                            <th></th>
+                            {% if current_user.tipo == 'financeiro' %}
+                            <th></th>
+                            {% endif %}
                         </tr>
                     </tfoot>
                 </table>
@@ -156,28 +179,56 @@
 {% endblock %}
 
 {% block extra_css %}
-<!-- DataTables -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
 
 <script>
     $(document).ready(function() {
-        $('#tabela-cargas').DataTable({
-            dom: 'Bfrtip',
-            buttons: ['copy', 'csv', 'excel', 'pdf', 'print'],
-            pageLength: 25,
+        // Configurar validação de datas
+        $('#data_final').change(function() {
+            var dataInicial = $('#data_inicial').val();
+            var dataFinal = $(this).val();
+            
+            if (dataInicial && dataFinal && dataFinal < dataInicial) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data inválida',
+                    text: 'A data final não pode ser anterior à data inicial'
+                });
+                $(this).val('');
+            }
+        });
+
+        $('#data_inicial').change(function() {
+            var dataInicial = $(this).val();
+            var dataFinal = $('#data_final').val();
+            
+            if (dataInicial && dataFinal && dataFinal < dataInicial) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data inválida',
+                    text: 'A data inicial não pode ser posterior à data final'
+                });
+                $(this).val('');
+            }
+        });
+
+        // Configurar DataTable
+        var table = $('#resumoTable').DataTable({
             language: {
                 "sEmptyTable": "Nenhum registro encontrado",
                 "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
@@ -199,31 +250,119 @@
                 "oAria": {
                     "sSortAscending": ": Ordenar colunas de forma ascendente",
                     "sSortDescending": ": Ordenar colunas de forma descendente"
+                },
+                "select": {
+                    "rows": {
+                        "_": "Selecionado %d linhas",
+                        "0": "Nenhuma linha selecionada",
+                        "1": "Selecionado 1 linha"
+                    }
+                },
+                "buttons": {
+                    "copy": "Copiar",
+                    "print": "Imprimir"
                 }
             },
-            order: [[0, 'desc']],
+            order: [[0, 'desc']], // Ordenar por data de abate (primeira coluna) decrescente
+            pageLength: 25,
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    text: '<i class="fas fa-file-excel"></i> Excel',
+                    className: 'btn btn-success',
+                    title: 'Resumo de Transportes',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    text: '<i class="fas fa-file-pdf"></i> PDF',
+                    className: 'btn btn-danger',
+                    title: 'Resumo de Transportes',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'print',
+                    text: '<i class="fas fa-print"></i> Imprimir',
+                    className: 'btn btn-secondary',
+                    title: 'Resumo de Transportes',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ],
             footerCallback: function(row, data, start, end, display) {
                 var api = this.api();
+
+                // Remover formatação para fazer os cálculos
                 var intVal = function(i) {
-                    return typeof i === 'string' ? 
-                        parseFloat(i.replace(/[R$\s.]/g, '').replace(',', '.')) :
-                        typeof i === 'number' ? i : 0;
+                    if (typeof i === 'string') {
+                        return parseFloat(i.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+                    }
+                    return typeof i === 'number' ? i : 0;
                 };
 
-                // Total over all pages
-                var cols = [3, 4, 5, 6, 7, 8]; // índices das colunas com valores monetários
-                cols.forEach(function(col) {
+                // Função para formatar valores em reais
+                var formatarMoeda = function(valor) {
+                    return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                };
+
+                // Calcular totais para cada coluna
+                var colunas = [5, 6, 7, 8, 9]; // índices das colunas de valores
+                colunas.forEach(function(coluna) {
                     var total = api
-                        .column(col)
+                        .column(coluna, { page: 'current'})
                         .data()
                         .reduce(function(a, b) {
                             return intVal(a) + intVal(b);
                         }, 0);
-
-                    $(api.column(col).footer()).html('R$ ' + total.toFixed(2));
+                    
+                    // Atualizar o rodapé com o valor formatado
+                    $(api.column(coluna).footer()).html(formatarMoeda(total));
                 });
             }
         });
+
+        // Adicionar classe aos botões de exportação
+        $('.dt-buttons').addClass('mb-3');
     });
+</script>
+
+<script>
+    function aprovarNota(id) {
+        if (confirm('Deseja realmente aprovar esta nota?')) {
+            fetch(`/resumos/aprovar_nota/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => Promise.reject(data));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    toastr.success(data.message);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    toastr.error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                toastr.error(error.message || 'Erro ao aprovar nota');
+            });
+        }
+    }
 </script>
 {% endblock %}

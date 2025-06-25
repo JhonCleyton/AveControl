@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Solicitações</h2>
+        <button class="btn btn-warning" onclick="limparAntigas()">
+            <i class="fas fa-broom"></i> Limpar Solicitações Antigas
+        </button>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {% if current_user.tipo == 'gerente' %}
+            <!-- Solicitações de Exclusão de Documentos -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt"></i> Solicitações de Exclusão de Documentos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if solicitacoes_documentos %}
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Carga</th>
+                                    <th>Documento</th>
+                                    <th>Solicitante</th>
+                                    <th>Data</th>
+                                    <th>Motivo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in solicitacoes_documentos %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('cargas.visualizar_carga', id=doc.carga_id) }}" target="_blank">
+                                            {{ doc.numero_carga }}
+                                        </a>
+                                    </td>
+                                    <td>{{ doc.tipo_documento }}</td>
+                                    <td>{{ doc.solicitado_por }}</td>
+                                    <td>{{ doc.data_solicitacao }}</td>
+                                    <td>{{ doc.motivo }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-success btn-sm" onclick="aprovarExclusaoDoc({{ doc.id }}, true)" title="Aprovar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="aprovarExclusaoDoc({{ doc.id }}, false)" title="Rejeitar">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            Não há solicitações de exclusão de documentos pendentes.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Solicitações de Cargas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-truck"></i> Solicitações de Cargas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if solicitacoes %}
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Carga</th>
+                                    <th>Tipo</th>
+                                    <th>Setor</th>
+                                    <th>Solicitante</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Motivo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sol in solicitacoes_json %}
+                                <tr>
+                                    <td>Carga #{{ sol.carga_numero }}</td>
+                                    <td>{{ sol.tipo }}</td>
+                                    <td>{{ sol.setor }}</td>
+                                    <td>{{ sol.solicitado_por }}</td>
+                                    <td>{{ sol.criado_em }}</td>
+                                    <td>
+                                        {% if sol.status == 'pendente' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% elif sol.status == 'aprovada' %}
+                                            <span class="badge bg-success">Aprovada</span>
+                                        {% elif sol.status == 'rejeitada' or sol.status == 'reprovada' %}
+                                            <span class="badge bg-danger">Reprovada</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Finalizada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                            onclick="verMotivo('{{ sol.motivo }}')" 
+                                            title="Clique para ver o motivo">
+                                            Ver Motivo
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-info btn-sm" onclick="verDetalhes({{ sol.id }})" title="Ver Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if sol.status == 'pendente' %}
+                                            <button class="btn btn-success btn-sm" onclick="analisarSolicitacao({{ sol.id }}, 'aprovada')" title="Aprovar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="analisarSolicitacao({{ sol.id }}, 'rejeitada')" title="Rejeitar">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            Não há solicitações pendentes.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensagem-confirmacao"></p>
+                <div class="mb-3">
+                    <label for="observacao" class="form-label">Observação (opcional):</label>
+                    <textarea class="form-control" id="observacao" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarAcao">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function verDetalhes(id) {
+    const solicitacao = solicitacoes_json.find(s => s.id === id);
+    if (!solicitacao) return;
+    
+    let statusHtml = '';
+    if (solicitacao.analisado_por) {
+        statusHtml = `
+            <p><strong>Analisado por:</strong> ${solicitacao.analisado_por}</p>
+            <p><strong>Data da análise:</strong> ${solicitacao.analisado_em}</p>
+            <p><strong>Observação:</strong> ${solicitacao.observacao_analise || '-'}</p>
+        `;
+    }
+    
+    Swal.fire({
+        title: 'Detalhes da Solicitação',
+        html: `
+            <div class="text-start">
+                <p><strong>Tipo:</strong> ${solicitacao.tipo === 'revisao' ? 'Revisão' : solicitacao.tipo === 'edicao' ? 'Edição' : 'Exclusão'}</p>
+                <p><strong>Setor:</strong> ${solicitacao.setor}</p>
+                <p><strong>Solicitante:</strong> ${solicitacao.solicitado_por}</p>
+                <p><strong>Data:</strong> ${solicitacao.criado_em}</p>
+                <p><strong>Motivo:</strong></p>
+                <p class="text-muted">${solicitacao.motivo}</p>
+                ${statusHtml}
+            </div>
+        `,
+        width: '600px'
+    });
+}
+
+function analisarSolicitacao(id, status) {
+    const titulo = status === 'aprovada' ? 'Aprovar' : 'Reprovar';
+    const acao = status === 'aprovada' ? 'aprovar' : 'reprovar';
+    
+    Swal.fire({
+        title: `${titulo} Solicitação`,
+        html: `
+            <textarea id="observacao" class="swal2-textarea" placeholder="Observação (opcional)"></textarea>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: titulo,
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const observacao = Swal.getPopup().querySelector('#observacao').value;
+            return { observacao };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch(`/solicitacoes/analisar_solicitacao/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    status: status,
+                    observacao: result.value.observacao
+                })
+            })
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Erro ao processar solicitação');
+                    }
+                    return data;
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: data.message,
+                        allowOutsideClick: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message
+                });
+            });
+        }
+    });
+}
+
+function aprovarExclusaoDoc(docId, aprovar) {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacao'));
+    const mensagem = document.getElementById('mensagem-confirmacao');
+    const btnConfirmar = document.getElementById('btnConfirmarAcao');
+    const observacaoInput = document.getElementById('observacao');
+
+    mensagem.textContent = `Deseja ${aprovar ? 'aprovar' : 'rejeitar'} esta solicitação de exclusão?`;
+    observacaoInput.value = '';
+
+    // Remover handler anterior se existir
+    btnConfirmar.onclick = null;
+
+    // Adicionar novo handler
+    btnConfirmar.onclick = function() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch(`/api/documentos/${docId}/aprovar-exclusao`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                aprovado: aprovar,
+                observacao: observacaoInput.value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(json => {
+                    throw new Error(json.error || 'Erro ao processar solicitação');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            modal.hide();
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso',
+                text: `Solicitação ${aprovar ? 'aprovada' : 'rejeitada'} com sucesso`,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                // Recarregar a página após processar
+                window.location.reload();
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao processar solicitação:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: error.message || 'Erro ao processar solicitação'
+            });
+        });
+    };
+
+    modal.show();
+}
+
+function limparAntigas() {
+    Swal.fire({
+        title: 'Limpar Solicitações Antigas',
+        text: 'Isso irá reprovar todas as solicitações pendentes. Deseja continuar?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, limpar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/solicitacoes/limpar_antigas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: data.message,
+                        allowOutsideClick: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message
+                });
+            });
+        }
+    });
+}
+
+function verMotivo(motivo) {
+    Swal.fire({
+        title: 'Motivo da Solicitação',
+        text: motivo,
+        icon: 'info',
+        confirmButtonText: 'Fechar'
+    });
+}
+</script>
+{% endblock %}

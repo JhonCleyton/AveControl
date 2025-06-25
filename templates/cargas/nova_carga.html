@@ -3,7 +3,7 @@
 {% block extra_css %}
 <!-- SweetAlert2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-{% endblock %}
+{% endblock extra_css %}
 
 {% block content %}
 <div class="container">
@@ -20,7 +20,7 @@
                     <div class="col-md-3">
                         <div class="mb-3">
                             <label for="numero_carga" class="form-label">Número da Carga</label>
-                            <input type="text" class="form-control" id="numero_carga" readonly>
+                            <input type="text" class="form-control" id="numero_carga" readonly required>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -65,138 +65,149 @@
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="agenciador" class="form-label">Agenciador</label>
-                            <input type="text" class="form-control" id="agenciador">
+                            <select class="form-select" id="agenciador">
+                                <option value="">Selecione...</option>
+                                <option value="Neguinho">Neguinho</option>
+                                <option value="Alberto">Alberto</option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <!-- Informações do Transporte -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Informações do Transporte</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="motorista" class="form-label">Motorista</label>
-                    <select class="form-select" id="motorista" onchange="toggleOutroMotorista()">
-                        <option value="">Selecione...</option>
-                        {% for motorista in motoristas %}
-                        <option value="{{ motorista }}">{{ motorista }}</option>
-                        {% endfor %}
-                        <option value="outro">Outro</option>
-                    </select>
-                </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Informações do Transporte</h5>
             </div>
-            <div class="col-md-4">
-                <div class="mb-3" id="outro-motorista-div" style="display: none;">
-                    <label for="motorista_outro" class="form-label">Outro Motorista</label>
-                    <input type="text" class="form-control" id="motorista_outro">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="motorista" class="form-label">Motorista</label>
+                            <select class="form-select" id="motorista">
+                                <option value="">Selecione...</option>
+                                {% for motorista in motoristas %}
+                                <option value="{{ motorista }}">{{ motorista }}</option>
+                                {% endfor %}
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3" id="outro-motorista-div" style="display: none;">
+                            <label for="motorista_outro" class="form-label">Outro Motorista</label>
+                            <input type="text" class="form-control" id="motorista_outro">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="transportadora" class="form-label">Transportadora</label>
+                            <select class="form-select" id="transportadora">
+                                <option value="">Selecione...</option>
+                                <option value="Ellen Transportes">Ellen Transportes</option>
+                                <option value="Terceirizado">Terceirizado</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="transportadora" class="form-label">Transportadora</label>
-                    <select class="form-select" id="transportadora">
-                        <option value="">Selecione...</option>
-                        <option value="Ellen Transportes">Ellen Transportes</option>
-                        <option value="Terceirizado">Terceirizado</option>
-                    </select>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="placa_veiculo" class="form-label">Placa do Veículo</label>
+                            <select class="form-select" id="placa_veiculo" style="display: none;">
+                                <option value="">Selecione...</option>
+                                <option value="AZT-7A23" data-valor="6.00">AZT-7A23</option>
+                                <option value="HMV-9126" data-valor="6.00">HMV-9126</option>
+                                <option value="MYY-8770" data-valor="6.00">MYY-8770</option>
+                                <option value="PAM-9J75" data-valor="6.00">PAM-9J75</option>
+                                <option value="PIW-6G46" data-valor="6.20">PIW-6G46</option>
+                                <option value="QKC-1E87" data-valor="6.00">QKC-1E87</option>
+                                <option value="RCY-3D00" data-valor="6.20">RCY-3D00</option>
+                                <option value="RLS-3A83" data-valor="6.20">RLS-3A83</option>
+                                <option value="RLV-0F19" data-valor="6.20">RLV-0F19</option>
+                                <option value="SKP-4J09" data-valor="6.20">SKP-4J09</option>
+                                <option value="outra">Outra</option>
+                            </select>
+                            <input type="text" class="form-control" id="placa_veiculo_input" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="km_saida" class="form-label">KM Saída</label>
+                            <input type="number" class="form-control" id="km_saida" name="km_saida" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="km_chegada" class="form-label">KM Chegada</label>
+                            <input type="number" class="form-control" id="km_chegada" name="km_chegada" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="km_rodados" class="form-label">KM Rodados</label>
+                            <input type="number" class="form-control" id="km_rodados" name="km_rodados" step="0.01" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="caixas_vazias" class="form-label">Caixas Vazias</label>
+                            <input type="number" class="form-control" id="caixas_vazias" name="caixas_vazias" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="quantidade_caixas" class="form-label">Quantidade de Caixas</label>
+                            <input type="number" class="form-control" id="quantidade_caixas" name="quantidade_caixas" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="valor_km" class="form-label">Valor por KM</label>
+                            <input type="number" step="0.01" class="form-control" id="valor_km" name="valor_km">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="valor_frete" class="form-label">Valor do Frete</label>
+                            <input type="number" step="0.01" class="form-control" id="valor_frete" name="valor_frete" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="status_frete" class="form-label">Status do Frete</label>
+                            <select class="form-select" id="status_frete" name="status_frete">
+                                <option value="A_PAGAR">A pagar</option>
+                                <option value="PAGO">Pago</option>
+                                <option value="INCLUSO">Incluso</option>
+                                <option value="CANCELADO">Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label for="placa_veiculo" class="form-label">Placa do Veículo</label>
-                    <select class="form-select" id="placa_veiculo" style="display: none;">
-                        <option value="">Selecione...</option>
-                        <option value="AZT7223" data-valor="5.70">AZT7223</option>
-                        <option value="QVC1E87" data-valor="5.70">QVC1E87</option>
-                        <option value="HMV9126" data-valor="5.70">HMV9126</option>
-                        <option value="MYY8770" data-valor="5.70">MYY8770</option>
-                        <option value="PIW6G46" data-valor="5.90">PIW6G46</option>
-                        <option value="PAM9J75" data-valor="5.70">PAM9J75</option>
-                        <option value="OGB9164" data-valor="5.90">OGB9164</option>
-                        <option value="RLS3A83" data-valor="5.90">RLS3A83</option>
-                        <option value="RLV0F19" data-valor="5.90">RLV0F19</option>
-                        <option value="RCY3A00" data-valor="5.90">RCY3A00</option>
-                    </select>
-                    <input type="text" class="form-control" id="placa_veiculo_input" style="display: none;">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label for="km_saida" class="form-label">KM Saída</label>
-                    <input type="number" class="form-control" id="km_saida">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label for="km_chegada" class="form-label">KM Chegada</label>
-                    <input type="number" class="form-control" id="km_chegada">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="mb-3">
-                    <label for="km_rodados" class="form-label">KM Rodados</label>
-                    <input type="number" class="form-control" id="km_rodados" readonly>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="valor_km" class="form-label">Valor por KM</label>
-                    <input type="number" step="0.01" class="form-control" id="valor_km">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="valor_frete" class="form-label">Valor do Frete</label>
-                    <input type="number" step="0.01" class="form-control" id="valor_frete" readonly>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="status_frete" class="form-label">Status do Frete</label>
-                    <select class="form-select" id="status_frete">
-                        <option value="">Selecione...</option>
-                        <option value="a_pagar">A Pagar</option>
-                        <option value="incluso">Incluso</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="caixas_vazias" class="form-label">Caixas Vazias</label>
-                    <input type="number" class="form-control" id="caixas_vazias">
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="quantidade_caixas" class="form-label">Quantidade de Caixas</label>
-                    <input type="number" class="form-control" id="quantidade_caixas">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
         <!-- Informações do Produtor e Documentação -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Informações do Produtor e Documentação</h5>
+                <h3 class="card-title">Informações do Produtor e Documentação</h3>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-8">
                         <div class="mb-3">
                             <label for="produtor" class="form-label">Produtor</label>
-                            <input type="text" class="form-control" id="produtor">
+                            <select class="form-select" id="produtor" name="produtor" required>
+                                <option value="">Selecione um produtor</option>
+                                {% for produtor in produtores %}
+                                <option value="{{ produtor }}">{{ produtor }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -267,7 +278,7 @@
                 <!-- Botão para adicionar subcarga -->
                 <div class="row mt-3">
                     <div class="col-12">
-                        <button type="button" class="btn btn-secondary" onclick="adicionarSubcarga()" id="btnAddSubcarga">
+                        <button type="button" class="btn btn-secondary" id="btnAddSubcarga">
                             <i class="fas fa-plus"></i> Adicionar Subcarga
                         </button>
                     </div>
@@ -381,9 +392,12 @@
         </div>
 
         <!-- Botões de Ação -->
-        <div class="d-flex justify-content-end gap-2 mb-4">
-            <button type="button" class="btn btn-secondary" onclick="salvarRascunho()">Salvar Rascunho</button>
-            <button type="button" class="btn btn-primary" onclick="salvarCarga()">Finalizar Carga</button>
+        <div class="row mt-4 mb-4">
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-primary" id="btnSalvarCarga">Salvar Carga</button>
+                <button type="button" class="btn btn-secondary" id="btnSalvarRascunho">Salvar Rascunho</button>
+                <button type="button" class="btn btn-danger" id="btnLimparCargas">Limpar</button>
+            </div>
         </div>
     </form>
 </div>
@@ -391,23 +405,30 @@
 <!-- Template para Subcargas -->
 <template id="template-subcarga">
     <div class="subcarga-item border rounded p-3 mt-3">
-        <h6 class="mb-3">Subcarga <span class="numero-subcarga"></span></h6>
+        <h5 class="mb-3">Subcarga <span class="numero-subcarga"></span></h5>
         <div class="row">
             <div class="col-md-4">
                 <div class="mb-3">
                     <label class="form-label">Tipo de Ave</label>
                     <select class="form-select subcarga-tipo-ave">
                         <option value="">Selecione...</option>
-                        {% for tipo in tipos_ave %}
-                        <option value="{{ tipo }}">{{ tipo }}</option>
-                        {% endfor %}
+                        <option value="Frango">Frango</option>
+                        <option value="Galinha Leve">Galinha Leve</option>
+                        <option value="Galinha Matriz">Galinha Matriz</option>
+                        <option value="Galinha Vermelha">Galinha Vermelha</option>
+                        <option value="Galo">Galo</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-8">
                 <div class="mb-3">
                     <label class="form-label">Produtor</label>
-                    <input type="text" class="form-control subcarga-produtor">
+                    <select class="form-select subcarga-produtor">
+                        <option value="">Selecione um produtor</option>
+                        {% for produtor in produtores %}
+                        <option value="{{ produtor }}">{{ produtor }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
@@ -417,9 +438,33 @@
                     <label class="form-label">UF do Produtor</label>
                     <select class="form-select subcarga-uf">
                         <option value="">Selecione...</option>
-                        {% for estado in estados_brasil %}
-                        <option value="{{ estado }}">{{ estado }}</option>
-                        {% endfor %}
+                        <option value="AC">Acre</option>
+                        <option value="AL">Alagoas</option>
+                        <option value="AP">Amapá</option>
+                        <option value="AM">Amazonas</option>
+                        <option value="BA">Bahia</option>
+                        <option value="CE">Ceará</option>
+                        <option value="DF">Distrito Federal</option>
+                        <option value="ES">Espírito Santo</option>
+                        <option value="GO">Goiás</option>
+                        <option value="MA">Maranhão</option>
+                        <option value="MT">Mato Grosso</option>
+                        <option value="MS">Mato Grosso do Sul</option>
+                        <option value="MG">Minas Gerais</option>
+                        <option value="PA">Pará</option>
+                        <option value="PB">Paraíba</option>
+                        <option value="PR">Paraná</option>
+                        <option value="PE">Pernambuco</option>
+                        <option value="PI">Piauí</option>
+                        <option value="RJ">Rio de Janeiro</option>
+                        <option value="RN">Rio Grande do Norte</option>
+                        <option value="RS">Rio Grande do Sul</option>
+                        <option value="RO">Rondônia</option>
+                        <option value="RR">Roraima</option>
+                        <option value="SC">Santa Catarina</option>
+                        <option value="SP">São Paulo</option>
+                        <option value="SE">Sergipe</option>
+                        <option value="TO">Tocantins</option>
                     </select>
                 </div>
             </div>
@@ -450,461 +495,396 @@
                 </div>
             </div>
         </div>
+        <button type="button" class="btn btn-danger btn-remover-subcarga">
+            <i class="fas fa-trash"></i> Remover Subcarga
+        </button>
     </div>
 </template>
-{% endblock %}
 
-{% block extra_js %}
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock content %}
+
+{% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Atualizar dia da semana automaticamente
-    const dataAbateInput = document.getElementById('data_abate');
-    const diaSemanaInput = document.getElementById('dia_semana');
-    
-    dataAbateInput.addEventListener('change', function() {
-        const [ano, mes, dia] = this.value.split('-');
-        const data = new Date(ano, mes - 1, dia);
-        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-        diaSemanaInput.value = diasSemana[data.getDay()];
-    });
-
-    // Gerenciar transportadora e placa
-    const transportadoraSelect = document.getElementById('transportadora');
-    const placaSelect = document.getElementById('placa_veiculo');
-    const placaInput = document.getElementById('placa_veiculo_input');
-    const valorKmInput = document.getElementById('valor_km');
-
-    transportadoraSelect.addEventListener('change', function() {
-        if (this.value === 'Ellen Transportes') {
-            placaSelect.style.display = 'block';
-            placaInput.style.display = 'none';
-            placaInput.value = '';
-            placaInput.required = false;
-            placaSelect.required = true;
-        } else if (this.value === 'Terceirizado') {
-            placaSelect.style.display = 'none';
-            placaInput.style.display = 'block';
-            placaSelect.value = '';
-            placaSelect.required = false;
-            placaInput.required = true;
-        } else {
-            placaSelect.style.display = 'none';
-            placaInput.style.display = 'none';
-            placaSelect.value = '';
-            placaInput.value = '';
-            placaSelect.required = false;
-            placaInput.required = false;
-        }
-    });
-
-    // Gerenciar motorista "Outro"
-    const motoristaSelect = document.getElementById('motorista');
-    const motoristaOutroInput = document.getElementById('motorista_outro');
-    
-    motoristaSelect.addEventListener('change', function() {
-        if (this.value === 'outro') {
-            motoristaOutroInput.parentElement.style.display = 'block';
-            motoristaOutroInput.required = true;
-        } else {
-            motoristaOutroInput.parentElement.style.display = 'none';
-            motoristaOutroInput.required = false;
-            motoristaOutroInput.value = '';
-        }
-    });
-
-    // Funções de cálculo de peso
+$(document).ready(function() {
+    // Funções de cálculo
     function calcularQuebraPeso() {
-        const pesoGranja = parseFloat(document.getElementById('peso_granja').value) || 0;
-        const pesoFrigorifico = parseFloat(document.getElementById('peso_frigorifico').value) || 0;
+        const pesoGranja = parseFloat($('#peso_granja').val()) || 0;
+        const pesoFrigorifico = parseFloat($('#peso_frigorifico').val()) || 0;
         
         if (pesoGranja > 0 && pesoFrigorifico > 0) {
             const quebraPeso = pesoGranja - pesoFrigorifico;
             const percentualQuebra = ((quebraPeso / pesoGranja) * 100);
             
-            document.getElementById('quebra_peso').value = quebraPeso.toFixed(2);
-            document.getElementById('percentual_quebra').value = percentualQuebra.toFixed(2);
-            
-            // Verificar se a quebra está acima de 5%
-            const divMotivoQuebra = document.getElementById('div_motivo_quebra');
-            const motivoAltaQuebra = document.getElementById('motivo_alta_quebra');
+            $('#quebra_peso').val(quebraPeso.toFixed(2));
+            $('#percentual_quebra').val(percentualQuebra.toFixed(2));
             
             if (percentualQuebra > 5) {
-                divMotivoQuebra.style.display = 'block';
-                motivoAltaQuebra.required = true;
+                $('#div_motivo_quebra').show();
+                $('#motivo_alta_quebra').prop('required', true);
             } else {
-                divMotivoQuebra.style.display = 'none';
-                motivoAltaQuebra.required = false;
-                motivoAltaQuebra.value = '';
+                $('#div_motivo_quebra').hide();
+                $('#motivo_alta_quebra').prop('required', false);
+                $('#motivo_alta_quebra').val('');
             }
-        } else {
-            document.getElementById('quebra_peso').value = '';
-            document.getElementById('percentual_quebra').value = '';
-            document.getElementById('div_motivo_quebra').style.display = 'none';
-            document.getElementById('motivo_alta_quebra').value = '';
         }
     }
 
-    // Event listeners para cálculos de peso
-    document.getElementById('peso_granja').addEventListener('input', calcularQuebraPeso);
-    document.getElementById('peso_frigorifico').addEventListener('input', calcularQuebraPeso);
-
-    // Funções de cálculo de transporte
     function calcularKmRodados() {
-        const kmSaida = parseFloat(document.getElementById('km_saida').value) || 0;
-        const kmChegada = parseFloat(document.getElementById('km_chegada').value) || 0;
+        const kmSaida = parseFloat($('#km_saida').val()) || 0;
+        const kmChegada = parseFloat($('#km_chegada').val()) || 0;
         
         if (kmChegada >= kmSaida) {
             const kmRodados = kmChegada - kmSaida;
-            document.getElementById('km_rodados').value = kmRodados.toFixed(2);
+            $('#km_rodados').val(kmRodados.toFixed(2));
             calcularValorFrete();
         } else {
-            document.getElementById('km_rodados').value = '';
-            document.getElementById('valor_frete').value = '';
-            document.getElementById('valor_frete_fechamento').value = '';
-            document.getElementById('valor_pagar').value = '';
+            $('#km_rodados').val('');
+            $('#valor_frete').val('');
+            $('#valor_frete_fechamento').val('');
+            $('#valor_pagar').val('');
         }
     }
 
     function calcularValorFrete() {
-        const kmRodados = parseFloat(document.getElementById('km_rodados').value) || 0;
-        const valorKm = parseFloat(document.getElementById('valor_km').value) || 0;
+        const kmRodados = parseFloat($('#km_rodados').val()) || 0;
+        const valorKm = parseFloat($('#valor_km').val()) || 0;
         
         if (kmRodados > 0 && valorKm > 0) {
             const valorFrete = kmRodados * valorKm;
-            document.getElementById('valor_frete').value = valorFrete.toFixed(2);
-            document.getElementById('valor_frete_fechamento').value = valorFrete.toFixed(2);
+            $('#valor_frete').val(valorFrete.toFixed(2));
+            $('#valor_frete_fechamento').val(valorFrete.toFixed(2));
             calcularValorPagar();
         }
     }
 
     function calcularValorPagar() {
-        const valorFrete = parseFloat(document.getElementById('valor_frete').value) || 0;
-        const pedagios = parseFloat(document.getElementById('pedagios').value) || 0;
-        const outrasDespesas = parseFloat(document.getElementById('outras_despesas').value) || 0;
-        const abastecimentoEmpresa = parseFloat(document.getElementById('abastecimento_empresa').value) || 0;
-        const abastecimentoPosto = parseFloat(document.getElementById('abastecimento_posto').value) || 0;
-        const adiantamento = parseFloat(document.getElementById('adiantamento').value) || 0;
+        const valorFrete = parseFloat($('#valor_frete').val()) || 0;
+        const pedagios = parseFloat($('#pedagios').val()) || 0;
+        const outrasDespesas = parseFloat($('#outras_despesas').val()) || 0;
+        const abastecimentoEmpresa = parseFloat($('#abastecimento_empresa').val()) || 0;
+        const abastecimentoPosto = parseFloat($('#abastecimento_posto').val()) || 0;
+        const adiantamento = parseFloat($('#adiantamento').val()) || 0;
 
         const valorPagar = valorFrete + pedagios + outrasDespesas - abastecimentoEmpresa - abastecimentoPosto - adiantamento;
-        document.getElementById('valor_pagar').value = valorPagar.toFixed(2);
+        $('#valor_pagar').val(valorPagar.toFixed(2));
     }
 
-    // Event listeners para cálculos de transporte
-    document.getElementById('km_saida').addEventListener('input', calcularKmRodados);
-    document.getElementById('km_chegada').addEventListener('input', calcularKmRodados);
-    document.getElementById('valor_km').addEventListener('input', calcularValorFrete);
-
-    // Event listeners para campos financeiros
-    const camposFinanceiros = ['pedagios', 'outras_despesas', 'abastecimento_empresa', 'abastecimento_posto', 'adiantamento'];
-    camposFinanceiros.forEach(campo => {
-        document.getElementById(campo).addEventListener('input', calcularValorPagar);
-    });
-
-    // Atualização automática do valor por KM baseado na placa
-    placaSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const valorKm = selectedOption.getAttribute('data-valor');
-        if (valorKm) {
-            document.getElementById('valor_km').value = valorKm;
-            calcularValorFrete();
+    // Funções de interface
+    function atualizarDiaSemana() {
+        const dataAbate = $('#data_abate').val();
+        console.log('Data original:', dataAbate);
+        
+        if (dataAbate) {
+            let data;
+            
+            // Verifica se a data está no formato yyyy-mm-dd (formato do input type="date")
+            if (dataAbate.includes('-')) {
+                data = new Date(dataAbate + 'T00:00:00');
+            } else {
+                // Se estiver no formato dd/mm/yyyy
+                const [dia, mes, ano] = dataAbate.split('/');
+                data = new Date(`${ano}-${mes}-${dia}T00:00:00`);
+            }
+            
+            console.log('Data parseada:', data);
+            
+            const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            const diaSemana = diasSemana[data.getDay()];
+            console.log('Dia da semana:', diaSemana);
+            
+            $('#dia_semana').val(diaSemana);
+        } else {
+            $('#dia_semana').val('');
         }
-    });
+    }
 
-    // Gerenciar subcargas
+    function toggleOutroMotorista() {
+        if ($('#motorista').val() === 'outro') {
+            $('#outro-motorista-div').show();
+            $('#motorista_outro').prop('required', true);
+        } else {
+            $('#outro-motorista-div').hide();
+            $('#motorista_outro').prop('required', false);
+            $('#motorista_outro').val('');
+        }
+    }
+
+    // Objeto com os valores por placa
+    const valoresPorPlaca = {
+        'AZT-7A23': '6.00',
+        'HMV-9126': '6.00',
+        'MYY-8770': '6.00',
+        'OGB-9I64': '6.20',
+        'PAM-9J75': '6.00',
+        'PIW-6G46': '6.20',
+        'QKC-1E87': '6.00',
+        'RCY-3D00': '6.20',
+        'RLS-3A83': '6.20',
+        'RLV-0F19': '6.20',
+        'SKP-4J09': '6.20'
+    };
+
+    function atualizarValorKm(placa) {
+        console.log('Atualizando valor para placa:', placa);
+        if (placa === 'outra') {
+            $('#placa_veiculo_input').show();
+            $('#valor_km').prop('readonly', false).val('');
+        } else {
+            const valor = valoresPorPlaca[placa];
+            console.log('Valor encontrado:', valor);
+            if (valor) {
+                $('#valor_km').val(valor);
+                $('#placa_veiculo_input').hide();
+                $('#valor_km').prop('readonly', true);
+                calcularValorFrete();
+            }
+        }
+    }
+
+    function togglePlacaVeiculo() {
+        const transportadora = $('#transportadora').val();
+        console.log('Transportadora selecionada:', transportadora);
+        
+        if (transportadora === 'Ellen Transportes') {
+            $('#placa_veiculo').show();
+            $('#placa_veiculo_input').hide().val('');
+            $('#valor_km').prop('readonly', true);
+            
+            // Atualizar valor quando a placa for selecionada
+            $('#placa_veiculo').off('change').on('change', function() {
+                const placa = $(this).val();
+                console.log('Placa selecionada:', placa);
+                atualizarValorKm(placa);
+            });
+
+            // Se já houver uma placa selecionada, atualizar o valor
+            const placaAtual = $('#placa_veiculo').val();
+            if (placaAtual) {
+                console.log('Placa já selecionada:', placaAtual);
+                atualizarValorKm(placaAtual);
+            }
+        } else if (transportadora === 'Terceirizado') {
+            $('#placa_veiculo').hide().val('');
+            $('#placa_veiculo_input').show();
+            $('#valor_km').prop('readonly', false).val('');
+            $('#placa_veiculo').off('change');
+        } else {
+            $('#placa_veiculo').hide().val('');
+            $('#placa_veiculo_input').hide().val('');
+            $('#valor_km').prop('readonly', false).val('');
+            $('#placa_veiculo').off('change');
+        }
+        calcularValorFrete();
+    }
+
+    // Variáveis para subcargas
     let contadorSubcargas = 0;
     const MAX_SUBCARGAS = 2;
 
-    window.adicionarSubcarga = function() {
+    function adicionarSubcarga() {
+        console.log('Tentando adicionar subcarga...');
         if (contadorSubcargas >= MAX_SUBCARGAS) {
-            alert('Máximo de ' + MAX_SUBCARGAS + ' subcargas permitido.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limite atingido',
+                text: 'Máximo de ' + MAX_SUBCARGAS + ' subcargas permitido.'
+            });
+            return;
+        }
+
+        // Clonar o template
+        const template = document.querySelector('#template-subcarga');
+        if (!template) {
+            console.error('Template de subcarga não encontrado!');
             return;
         }
 
         contadorSubcargas++;
+        console.log('Adicionando subcarga número:', contadorSubcargas);
+
+        const novaSubcarga = document.importNode(template.content, true);
+        console.log('Template clonado:', novaSubcarga);
+
+        // Atualizar o número da subcarga
+        const numeroSpan = novaSubcarga.querySelector('.numero-subcarga');
+        if (numeroSpan) {
+            numeroSpan.textContent = contadorSubcargas;
+        }
+
+        // Adicionar ao container
         const container = document.getElementById('subcargas-container');
-        const template = document.getElementById('template-subcarga');
-        const clone = template.content.cloneNode(true);
-        
-        // Atualizar número da subcarga
-        const numeroCarga = document.getElementById('numero_carga').value;
-        clone.querySelector('.numero-subcarga').textContent = numeroCarga + '.' + contadorSubcargas;
-        
-        container.appendChild(clone);
-        
-        if (contadorSubcargas >= MAX_SUBCARGAS) {
-            document.getElementById('btnAddSubcarga').disabled = true;
-        }
-    }
+        if (container) {
+            container.appendChild(novaSubcarga);
+            console.log('Subcarga adicionada ao container');
 
-    // Funções de salvar
-    window.coletarDadosFormulario = function() {
-        const hoje = new Date().toISOString().split('T')[0];
-
-        // Função auxiliar para obter valor numérico
-        const getNumericValue = (elementId, defaultValue = '0') => {
-            const element = document.getElementById(elementId);
-            if (!element) return defaultValue;
-            const value = element.value.trim();
-            return value === '' ? defaultValue : value;
-        };
-
-        const dados = {
-            numero_carga: document.getElementById('numero_carga')?.value || '',
-            tipo_ave: document.getElementById('tipo_ave')?.value || 'Frango',
-            quantidade_cargas: getNumericValue('quantidade_cargas', '1'),
-            ordem_carga: document.getElementById('ordem_carga')?.value || '1/1',
-            data_abate: document.getElementById('data_abate')?.value || hoje,
-            dia_semana: document.getElementById('dia_semana')?.value || '',
-            agenciador: document.getElementById('agenciador')?.value || '',
-            motorista: document.getElementById('motorista')?.value === 'outro' ? document.getElementById('motorista_outro')?.value : document.getElementById('motorista')?.value,
-            transportadora: document.getElementById('transportadora')?.value || '',
-            placa_veiculo: placaSelect.style.display === 'none' ? placaInput.value : placaSelect.value,
-            km_saida: getNumericValue('km_saida'),
-            km_chegada: getNumericValue('km_chegada'),
-            km_rodados: getNumericValue('km_rodados'),
-            valor_km: getNumericValue('valor_km'),
-            valor_frete: getNumericValue('valor_frete'),
-            status_frete: document.getElementById('status_frete')?.value || '',
-            caixas_vazias: getNumericValue('caixas_vazias'),
-            quantidade_caixas: getNumericValue('quantidade_caixas'),
-            produtor: document.getElementById('produtor')?.value || '',
-            uf_produtor: document.getElementById('uf_produtor')?.value || '',
-            numero_nfe: document.getElementById('numero_nfe')?.value || '',
-            data_nfe: document.getElementById('data_nfe')?.value || hoje,
-            numero_gta: document.getElementById('numero_gta')?.value || '',
-            data_gta: document.getElementById('data_gta')?.value || hoje,
-            peso_granja: getNumericValue('peso_granja'),
-            peso_frigorifico: getNumericValue('peso_frigorifico'),
-            percentual_quebra: getNumericValue('percentual_quebra'),
-            quebra_peso: getNumericValue('quebra_peso'),
-            motivo_alta_quebra: document.getElementById('motivo_alta_quebra')?.value || '',
-            pedagios: getNumericValue('pedagios'),
-            outras_despesas: getNumericValue('outras_despesas'),
-            abastecimento_empresa: getNumericValue('abastecimento_empresa'),
-            abastecimento_posto: getNumericValue('abastecimento_posto'),
-            adiantamento: getNumericValue('adiantamento'),
-            valor_pagar: getNumericValue('valor_pagar')
-        };
-
-        // Coletar dados das subcargas
-        const subcargas = document.querySelectorAll('.subcarga-item');
-        if (subcargas.length > 0) {
-            dados.subcargas = [];
-            
-            subcargas.forEach((subcarga, index) => {
-                const subcargaData = {
-                    tipo_ave: subcarga.querySelector('.subcarga-tipo-ave')?.value || '',
-                    produtor: subcarga.querySelector('.subcarga-produtor')?.value || '',
-                    uf_produtor: subcarga.querySelector('.subcarga-uf')?.value || '',
-                    numero_nfe: subcarga.querySelector('.subcarga-nfe')?.value || '',
-                    data_nfe: subcarga.querySelector('.subcarga-data-nfe')?.value || hoje,
-                    numero_gta: subcarga.querySelector('.subcarga-gta')?.value || '',
-                    data_gta: subcarga.querySelector('.subcarga-data-gta')?.value || hoje
-                };
-                
-                if (Object.values(subcargaData).some(value => value && value !== hoje)) {
-                    dados.subcargas.push(subcargaData);
-                }
-            });
-        }
-
-        return dados;
-    }
-
-    window.verificarCamposVazios = function() {
-        const camposObrigatorios = [
-            'tipo_ave',
-            'quantidade_cargas',
-            'ordem_carga',
-            'data_abate',
-            'dia_semana',
-            'agenciador',
-            'motorista',
-            'transportadora',
-            'placa_veiculo',
-            'produtor',
-            'uf_produtor',
-            'numero_nfe',
-            'data_nfe',
-            'numero_gta',
-            'data_gta',
-            'peso_granja',
-            'peso_frigorifico'
-        ];
-        
-        const camposPrincipaisVazios = camposObrigatorios.filter(campo => {
-            const elemento = document.getElementById(campo);
-            return !elemento || !elemento.value.trim();
-        });
-
-        if (camposPrincipaisVazios.length > 0) {
-            return camposPrincipaisVazios;
-        }
-
-        // Verificar campos obrigatórios das subcargas
-        const subcargas = document.querySelectorAll('.subcarga-item');
-        const camposSubcargasVazios = Array.from(subcargas).filter(subcarga => {
-            return [
-                '.subcarga-tipo-ave',
-                '.subcarga-produtor',
-                '.subcarga-uf'
-            ].some(seletor => {
-                const elemento = subcarga.querySelector(seletor);
-                return !elemento || !elemento.value.trim();
-            });
-        }).map(subcarga => {
-            const index = Array.from(subcargas).indexOf(subcarga) + 1;
-            return `Subcarga ${index}`;
-        });
-
-        return camposSubcargasVazios;
-    }
-
-    window.salvarCarga = function() {
-        console.log("Iniciando salvamento da carga...");
-        const dados = coletarDadosFormulario();
-        console.log("Dados coletados:", dados);
-
-        const camposVazios = verificarCamposVazios();
-        console.log("Campos vazios:", camposVazios);
-        const ehIncompleta = camposVazios.length > 0;
-
-        fetch('/cargas/criar_carga', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dados)
-        })
-        .then(response => {
-            console.log("Status da resposta:", response.status);
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Erro ao salvar a carga');
+            // Configurar botão de remover
+            const btnRemover = container.querySelector('.subcarga-item:last-child .btn-remover-subcarga');
+            if (btnRemover) {
+                btnRemover.addEventListener('click', function() {
+                    this.closest('.subcarga-item').remove();
+                    contadorSubcargas--;
+                    document.getElementById('btnAddSubcarga').disabled = false;
+                    
+                    // Atualizar números das subcargas restantes
+                    document.querySelectorAll('.subcarga-item').forEach((item, index) => {
+                        item.querySelector('.numero-subcarga').textContent = index + 1;
+                    });
                 });
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Resposta do servidor:", data);
-            if (data.success) {
-                let mensagem = 'Carga salva com sucesso!';
-                if (ehIncompleta) {
-                    mensagem = 'Carga salva como incompleta. Você pode completá-la mais tarde.';
-                }
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Carga Salva',
-                    text: mensagem
-                }).then(() => {
-                    if (ehIncompleta) {
-                        window.location.href = '/cargas/cargas_incompletas';
-                    } else {
-                        window.location.href = '/cargas/todas_cargas';
-                    }
-                });
-            } else {
-                throw new Error(data.message || 'Erro ao salvar a carga');
+            // Desabilitar botão se atingiu o limite
+            if (contadorSubcargas >= MAX_SUBCARGAS) {
+                document.getElementById('btnAddSubcarga').disabled = true;
             }
-        })
-        .catch(error => {
-            console.error('Erro detalhado:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: error.message || 'Ocorreu um erro ao salvar a carga.'
-            });
-        });
+        } else {
+            console.error('Container de subcargas não encontrado!');
+        }
     }
 
-    window.salvarRascunho = function() {
-        const dados = coletarDadosFormulario();
-        dados.status = 'rascunho';
+    function coletarDadosSubcargas() {
+        const subcargas = [];
+        $('.subcarga-item').each(function() {
+            const subcarga = {
+                tipo_ave: $(this).find('.subcarga-tipo-ave').val(),
+                produtor: $(this).find('.subcarga-produtor').val(),
+                uf_produtor: $(this).find('.subcarga-uf').val(),
+                numero_nfe: $(this).find('.subcarga-nfe').val(),
+                data_nfe: $(this).find('.subcarga-data-nfe').val(),
+                numero_gta: $(this).find('.subcarga-gta').val(),
+                data_gta: $(this).find('.subcarga-data-gta').val()
+            };
+            subcargas.push(subcarga);
+        });
+        return subcargas;
+    }
+
+    function salvarCarga(e) {
+        e.preventDefault();
         
-        fetch('/cargas/criar_carga', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        // Coletar dados do formulário
+        const dadosCarga = {
+            tipo_ave: $('#tipo_ave').val(),
+            quantidade_cargas: $('#quantidade_cargas').val(),
+            ordem_carga: $('#ordem_carga').val(),
+            data_abate: $('#data_abate').val(),
+            dia_semana: $('#dia_semana').val(),
+            agenciador: $('#agenciador').val(),
+            motorista: $('#motorista').val() === 'outro' ? $('#motorista_outro').val() : $('#motorista').val(),
+            transportadora: $('#transportadora').val(),
+            placa_veiculo: $('#transportadora').val() === 'Ellen Transportes' ? $('#placa_veiculo').val() : $('#placa_veiculo_input').val(),
+            km_saida: $('#km_saida').val(),
+            km_chegada: $('#km_chegada').val(),
+            km_rodados: $('#km_rodados').val(),
+            valor_km: $('#valor_km').val(),
+            valor_frete: $('#valor_frete').val(),
+            status_frete: $('#status_frete').val(),
+            caixas_vazias: $('#caixas_vazias').val(),
+            quantidade_caixas: $('#quantidade_caixas').val(),
+            pedagios: $('#pedagios').val(),
+            outras_despesas: $('#outras_despesas').val(),
+            abastecimento_empresa: $('#abastecimento_empresa').val(),
+            abastecimento_posto: $('#abastecimento_posto').val(),
+            adiantamento: $('#adiantamento').val(),
+            valor_pagar: $('#valor_pagar').val(),
+            // Adicionar campos de peso e quebra
+            peso_granja: $('#peso_granja').val(),
+            peso_frigorifico: $('#peso_frigorifico').val(),
+            percentual_quebra: $('#percentual_quebra').val(),
+            quebra_peso: $('#quebra_peso').val(),
+            motivo_alta_quebra: $('#motivo_alta_quebra').val(),
+            // Adicionar campos do produtor
+            produtor: $('#produtor').val(),
+            uf_produtor: $('#uf_produtor').val(),
+            numero_nfe: $('#numero_nfe').val(),
+            data_nfe: $('#data_nfe').val(),
+            numero_gta: $('#numero_gta').val(),
+            data_gta: $('#data_gta').val(),
+            subcargas: coletarDadosSubcargas()
+        };
+
+        // Enviar dados para o servidor
+        $.ajax({
+            url: '/cargas/criar_carga',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(dadosCarga),
+            success: function(response) {
+                if (response.success) {
+                    // Atualizar o número da carga no formulário
+                    $('#numero_carga').val(response.numero_carga);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso',
+                        text: response.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = '/cargas';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: response.message || 'Erro ao salvar a carga'
+                    });
+                }
             },
-            body: JSON.stringify(dados)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Sucesso',
-                    text: 'Rascunho salvo com sucesso!'
-                }).then(() => {
-                    window.location.href = '/cargas/todas_cargas';
-                });
-            } else {
+            error: function(xhr) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro',
-                    text: 'Erro ao salvar rascunho: ' + data.message
+                    text: 'Erro ao salvar a carga: ' + (xhr.responseJSON?.message || 'Erro desconhecido')
                 });
             }
         });
     }
 
-    window.limparCargas = function() {
-        Swal.fire({
-            title: 'Atenção!',
-            text: 'Isso irá excluir TODAS as cargas e reiniciar a contagem. Tem certeza?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, excluir tudo',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#d33'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch('/cargas/limpar_cargas', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Sucesso!', data.message, 'success')
-                        .then(() => {
-                            window.location.reload();
-                        });
-                    } else {
-                        Swal.fire('Erro!', data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    Swal.fire('Erro!', 'Erro ao limpar cargas', 'error');
-                });
-            }
-        });
+    // Event listeners
+    $('#data_abate').on('change input', atualizarDiaSemana);
+    $('#motorista').on('change', toggleOutroMotorista);
+    $('#transportadora').on('change', togglePlacaVeiculo);
+    $('#placa_veiculo').on('change', function() {
+        atualizarValorKm($(this).val());
+    });
+    $('#placa_veiculo_input').on('input', function() {
+        atualizarValorKm($(this).val());
+    });
+    
+    // Event listeners para cálculos de peso e quebra
+    $('#peso_granja, #peso_frigorifico').on('change input', calcularQuebraPeso);
+    
+    // Event listeners para cálculos financeiros
+    $('#km_saida, #km_chegada').on('change input', calcularKmRodados);
+    $('#km_rodados, #valor_km').on('change input', calcularValorFrete);
+    $('#valor_frete, #pedagios, #outras_despesas, #abastecimento_empresa, #abastecimento_posto, #adiantamento').on('change input', calcularValorPagar);
+    $('#btnAddSubcarga').on('click', function(e) {
+        e.preventDefault();
+        adicionarSubcarga();
+    });
+    $('#btnSalvarCarga').on('click', salvarCarga);
+
+    // Inicialização
+    if ($('#data_abate').val()) {
+        atualizarDiaSemana();
+    }
+    if ($('#motorista').val() === 'outro') {
+        toggleOutroMotorista();
+    }
+    if ($('#transportadora').val()) {
+        togglePlacaVeiculo();
     }
 
-    window.toggleOutroMotorista = function() {
-        const motoristaSelect = document.getElementById('motorista');
-        const outroMotoristaDiv = document.getElementById('outro-motorista-div');
-        const outroMotoristaInput = document.getElementById('motorista_outro');
-        
-        if (motoristaSelect.value === 'outro') {
-            outroMotoristaDiv.style.display = 'block';
-            outroMotoristaInput.required = true;
-        } else {
-            outroMotoristaDiv.style.display = 'none';
-            outroMotoristaInput.required = false;
-            outroMotoristaInput.value = '';
+    // Carregar o próximo número de carga
+    $.get('/cargas/proximo_numero', function(response) {
+        if (response.numero) {
+            $('#numero_carga').val(response.numero);
         }
-    }
+    });
 
-    // Chamar a função no carregamento para garantir estado inicial correto
-    toggleOutroMotorista();
+    // Log para debug
+    console.log('Script inicializado');
+    console.log('jQuery versão:', $.fn.jquery);
 });
 </script>
-{% endblock %}
+{% endblock scripts %}

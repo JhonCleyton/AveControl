@@ -11,32 +11,28 @@
         {% endif %}
     </div>
 
-    <!-- Campo de Busca -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <form action="{{ url_for('cargas.listar_cargas') }}" method="get" class="d-flex">
-                <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="Buscar por número, motorista, tipo de ave..." value="{{ search if search else '' }}">
-                    <button class="btn btn-outline-primary" type="submit">
+    <!-- Filtros de busca -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" id="busca-numero" class="form-control" placeholder="Número da Carga">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="busca-placa" class="form-control" placeholder="Placa do Veículo">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="busca-motorista" class="form-control" placeholder="Nome do Motorista">
+                </div>
+                <div class="col-md-3">
+                    <button id="btn-buscar" class="btn btn-primary me-2">
                         <i class="fas fa-search"></i> Buscar
                     </button>
-                    {% if search %}
-                    <a href="{{ url_for('cargas.listar_cargas') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i> Limpar
-                    </a>
-                    {% endif %}
+                    <button id="btn-limpar" class="btn btn-secondary">
+                        <i class="fas fa-eraser"></i> Limpar
+                    </button>
                 </div>
-            </form>
-        </div>
-        <div class="col-md-6 text-end">
-            {% if cargas %}
-            <small class="text-muted">
-                Mostrando {{ cargas|length }} carga(s)
-                {% if search %}
-                para a busca "{{ search }}"
-                {% endif %}
-            </small>
-            {% endif %}
+            </div>
         </div>
     </div>
 
@@ -48,24 +44,45 @@
                     <th>Data</th>
                     <th>Tipo de Ave</th>
                     <th>Motorista</th>
-                    <th>Status Nota</th>
+                    <th>Placa</th>
+                    <th>Status Financeiro</th>
+                    <th>Status Carga</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                {% for carga in cargas %}
+                {% for carga_tuple in cargas %}
+                {% set carga = carga_tuple[0] %}
+                {% set total_edicoes = carga_tuple[1] %}
                 <tr>
-                    <td>{{ carga.numero_carga }}</td>
+                    <td>
+                        {{ carga.numero_carga }}
+                        {% if total_edicoes > 0 %}
+                        <i class="fas fa-pencil-alt text-info" title="Esta carga teve {{ total_edicoes }} edição(ões)"></i>
+                        {% endif %}
+                    </td>
                     <td>{{ carga.criado_em.strftime('%d/%m/%Y') }}</td>
                     <td>{{ carga.tipo_ave }}</td>
-                    <td>{{ carga.motorista }}</td>
+                    <td>{{ carga.motorista or '-' }}</td>
+                    <td>{{ carga.placa_veiculo or '-' }}</td>
                     <td>
-                        {% if carga.nota_autorizada %}
+                        {% if carga.nota_concluida %}
+                            <span class="badge bg-primary">Concluído</span>
+                        {% elif carga.nota_autorizada %}
                             <span class="badge bg-success">Autorizada</span>
                         {% elif carga.nota_aprovada %}
                             <span class="badge bg-info">Aprovada</span>
                         {% else %}
                             <span class="badge bg-warning">Pendente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if carga.status == 'pendente' %}
+                            <span class="badge bg-warning">Pendente</span>  
+                        {% elif carga.status == 'producao' %}
+                            <span class="badge bg-info">Em Andamento</span>
+                        {% else %}
+                            <span class="badge bg-success">Concluído</span> 
                         {% endif %}
                     </td>
                     <td>
@@ -95,14 +112,9 @@
                         </a>
                         {% endif %}
 
-                        {% if not carga.nota_aprovada %}
+                        {% if current_user.tipo in ['financeiro'] and not carga.nota_aprovada %}
                         <button onclick="aprovarNota({{ carga.id }})" class="btn btn-sm btn-success" title="Aprovar Nota">
                             <i class="fas fa-check"></i>
-                        </button>
-                        {% endif %}
-                        {% if carga.nota_aprovada and not carga.nota_autorizada and current_user.tipo in ['gerente', 'admin'] %}
-                        <button onclick="autorizarNota({{ carga.id }})" class="btn btn-sm btn-primary" title="Autorizar Nota">
-                            <i class="fas fa-key"></i>
                         </button>
                         {% endif %}
                     </td>
@@ -114,7 +126,10 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 function aprovarNota(id) {
     Swal.fire({
@@ -129,24 +144,34 @@ function aprovarNota(id) {
             fetch(`/cargas/aprovar_nota/${id}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire('Sucesso!', data.message, 'success')
-                    .then(() => {
-                        window.location.reload();
+                    Swal.fire({
+                        title: 'Sucesso!',
+                        text: 'Nota aprovada com sucesso!',
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload();
                     });
                 } else {
-                    Swal.fire('Erro!', data.message, 'error');
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: data.message || 'Erro ao aprovar nota.',
+                        icon: 'error'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                Swal.fire('Erro!', 'Erro ao aprovar nota', 'error');
+                Swal.fire({
+                    title: 'Erro!',
+                    text: 'Erro ao aprovar nota.',
+                    icon: 'error'
+                });
             });
         }
     });
@@ -180,7 +205,7 @@ function autorizarNota(id) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify(result.value)
             })
@@ -202,5 +227,94 @@ function autorizarNota(id) {
         }
     });
 }
+function atualizarStatus() {
+        const novoStatus = document.getElementById('statusCarga').value;
+        
+        fetch(`/cargas/atualizar_status/${cargaId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken()
+            },
+            body: JSON.stringify({ status: novoStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso!',
+                    text: 'Status atualizado com sucesso',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    // Recarrega a página para atualizar todas as informações
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: data.message || 'Erro ao atualizar status'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao atualizar status'
+            });
+        });
+    }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tabelaCargas = document.querySelector('.table tbody');
+    const inputNumero = document.getElementById('busca-numero');
+    const inputPlaca = document.getElementById('busca-placa');
+    const inputMotorista = document.getElementById('busca-motorista');
+    const btnBuscar = document.getElementById('btn-buscar');
+    const btnLimpar = document.getElementById('btn-limpar');
+
+    function filtrarCargas() {
+        const numero = inputNumero.value.toLowerCase();
+        const placa = inputPlaca.value.toLowerCase();
+        const motorista = inputMotorista.value.toLowerCase();
+        
+        const linhas = tabelaCargas.getElementsByTagName('tr');
+        
+        for (const linha of linhas) {
+            const colunas = linha.getElementsByTagName('td');
+            const numeroCarga = colunas[0].textContent.toLowerCase();
+            const placaVeiculo = colunas[4].textContent.toLowerCase();
+            const nomeMotorista = colunas[3].textContent.toLowerCase();
+            
+            const matchNumero = numero === '' || numeroCarga.includes(numero);
+            const matchPlaca = placa === '' || placaVeiculo.includes(placa);
+            const matchMotorista = motorista === '' || nomeMotorista.includes(motorista);
+            
+            linha.style.display = (matchNumero && matchPlaca && matchMotorista) ? '' : 'none';
+        }
+    }
+
+    btnBuscar.addEventListener('click', filtrarCargas);
+    
+    btnLimpar.addEventListener('click', function() {
+        inputNumero.value = '';
+        inputPlaca.value = '';
+        inputMotorista.value = '';
+        filtrarCargas();
+    });
+
+    // Habilitar busca ao pressionar Enter
+    [inputNumero, inputPlaca, inputMotorista].forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                filtrarCargas();
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

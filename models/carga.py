@@ -10,9 +10,15 @@ class Carga(db.Model):
     
     # Constantes para status
     STATUS_PENDENTE = 'pendente'
-    STATUS_EM_ANDAMENTO = 'em_andamento'
+    STATUS_EM_ANDAMENTO = 'em andamento'
     STATUS_CONCLUIDA = 'concluida'
     STATUS_CANCELADA = 'cancelada'
+    STATUS_INCOMPLETA = 'incompleta'
+    
+    # Status da nota
+    STATUS_NOTA_PENDENTE = 'pendente'
+    STATUS_NOTA_APROVADO = 'aprovado'
+    STATUS_NOTA_AUTORIZADO = 'autorizado'
     
     id = db.Column(db.Integer, primary_key=True)
     numero_carga = db.Column(db.String(50), unique=True, nullable=False)
@@ -32,7 +38,9 @@ class Carga(db.Model):
     valor_km = db.Column(db.Float, default=0)
     valor_frete = db.Column(db.Float, default=0)
     status_frete = db.Column(db.String(50))
-    status = db.Column(db.String(50), default=STATUS_PENDENTE)
+    _status = db.Column(db.String(50), default=STATUS_PENDENTE)
+    nota_aprovada = db.Column(db.Boolean, default=False)
+    nota_autorizada = db.Column(db.Boolean, default=False)
     status_atualizado_em = db.Column(db.DateTime)
     status_atualizado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     status_atualizado_por = db.relationship('Usuario', foreign_keys=[status_atualizado_por_id])
@@ -56,10 +64,8 @@ class Carga(db.Model):
     abastecimento_posto = db.Column(db.Float, default=0)
     adiantamento = db.Column(db.Float, default=0)
     valor_pagar = db.Column(db.Float, default=0)
-    nota_aprovada = db.Column(db.Boolean, default=False)
     aprovado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     aprovado_em = db.Column(db.DateTime)
-    nota_autorizada = db.Column(db.Boolean, default=False)
     autorizado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     autorizado_em = db.Column(db.DateTime)
     assinatura_autorizacao = db.Column(db.String(500))
@@ -100,7 +106,66 @@ class Carga(db.Model):
     subcargas = db.relationship('SubCarga', backref='carga', lazy=True)
     producoes = db.relationship('Producao', backref='carga', lazy=True)
     fechamento = db.relationship('Fechamento', back_populates='carga', uselist=False)
+    custo_ave = db.relationship('CustoAve', back_populates='carga', uselist=False)
     historicos = db.relationship('HistoricoCarga', back_populates='carga', cascade='all, delete-orphan')
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        if value:
+            self._status = value.lower()
+        else:
+            self._status = value
+
+    @property
+    def status_nota(self):
+        if self.nota_autorizada:
+            return self.STATUS_NOTA_AUTORIZADO
+        elif self.nota_aprovada:
+            return self.STATUS_NOTA_APROVADO
+        else:
+            return self.STATUS_NOTA_PENDENTE
+
+    @status_nota.setter
+    def status_nota(self, value):
+        if value == self.STATUS_NOTA_AUTORIZADO:
+            self.nota_autorizada = True
+            self.nota_aprovada = True
+        elif value == self.STATUS_NOTA_APROVADO:
+            self.nota_autorizada = False
+            self.nota_aprovada = True
+        else:  # pendente
+            self.nota_autorizada = False
+            self.nota_aprovada = False
+
+    def atualizar_status(self, novo_status, usuario):
+        """Atualiza o status da carga e registra no histórico."""
+        if novo_status not in [
+            self.STATUS_PENDENTE,
+            self.STATUS_EM_ANDAMENTO,
+            self.STATUS_CONCLUIDA,
+            self.STATUS_CANCELADA,
+            self.STATUS_INCOMPLETA
+        ]:
+            raise ValueError(f"Status inválido: {novo_status}")
+
+        status_anterior = self._status
+        self._status = novo_status
+        self.status_atualizado_em = datetime.now()
+        self.status_atualizado_por = usuario
+
+        # Registrar no histórico
+        historico = HistoricoCarga(
+            carga=self,
+            usuario=usuario,
+            tipo='status',
+            valor_anterior=status_anterior,
+            valor_novo=novo_status
+        )
+        db.session.add(historico)
 
 class SubCarga(db.Model):
     __tablename__ = 'subcargas'

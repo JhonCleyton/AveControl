@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="card">
         <div class="card-header">
-            <h4>Fechamento de Carga</h4>
+            <h3 class="card-title">Fechamento de Carga</h3>
         </div>
         <div class="card-body">
             <!-- Busca da Carga -->
@@ -20,16 +20,20 @@
             </div>
 
             <!-- Dados da Carga -->
-            <div id="dados_carga" style="display: none;">
+            <div id="dados_carga" style="display: none;" data-carga-id="">
                 <div class="alert alert-info">
                     <h5>Dados da Carga: <span id="display_numero_carga"></span></h5>
                     <p>Motorista: <span id="display_motorista"></span></p>
                     <p>Data: <span id="display_data"></span></p>
                 </div>
+                
+                <!-- Botão de Documentos -->
+                {% include 'includes/modal_documento.html' %}
             </div>
 
             <!-- Formulário de Fechamento -->
             <form id="form_fechamento" style="display: none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Dados do Fechamento</h5>
@@ -56,6 +60,7 @@
                                             <select class="form-select" id="tipo_fechamento_1">
                                                 <option value="unidade">Unidade</option>
                                                 <option value="kg">KG</option>
+                                                <option value="bonificacao">Bonificação</option>
                                             </select>
                                         </div>
                                     </div>
@@ -144,173 +149,238 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="text-end">
-                    <button type="button" class="btn btn-primary" onclick="salvarFechamento()">
-                        <i class="fas fa-save"></i> Salvar Fechamento
-                    </button>
-                </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Botões de ação -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <button type="button" class="btn btn-primary" onclick="salvarFechamento()">
+                <i class="fas fa-save"></i> Salvar Fechamento
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="voltar()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+        </div>
+    </div>
+
+    <!-- Seção de documentos -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Documentos da Carga</h5>
+        </div>
+        <div class="card-body">
+            {% include 'includes/modal_documento.html' %}
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-let cargaAtual = null;
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/documentos.js') }}"></script>
+    <script>
+        let cargaAtual = null;
 
-function toggleTratativas() {
-    const tratativas = document.getElementById('tratativas').value;
-    const tratativa2 = document.getElementById('tratativa_2');
-    
-    if (tratativas === '2') {
-        tratativa2.style.display = 'block';
-    } else {
-        tratativa2.style.display = 'none';
-    }
-}
+        // Inicializar módulo de documentos quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.DocumentosModule) {
+                window.DocumentosModule.init();
+            }
+        });
 
-function calcularTotal(numero) {
-    const quantidade = parseFloat(document.getElementById(`quantidade_${numero}`).value) || 0;
-    const valorUnitario = parseFloat(document.getElementById(`valor_unitario_${numero}`).value) || 0;
-    const descontos = parseFloat(document.getElementById(`descontos_${numero}`).value) || 0;
-    
-    const total = (quantidade * valorUnitario) - descontos;
-    document.getElementById(`valor_total_${numero}`).value = total.toFixed(2);
-}
+        function buscarCarga() {
+            const numeroCarga = document.getElementById('numero_carga').value;
+            if (!numeroCarga) {
+                Swal.fire('Erro', 'Por favor, digite o número da carga', 'error');
+                return;
+            }
 
-function buscarCarga() {
-    const numeroCarga = document.getElementById('numero_carga').value;
-    
-    fetch(`/cargas/buscar_carga_fechamento/${numeroCarga}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const cargaData = data.data.carga;
-                const fechamentoData = data.data.fechamento;
-                
-                document.getElementById('display_numero_carga').textContent = cargaData.numero_carga;
-                document.getElementById('display_motorista').textContent = cargaData.motorista || cargaData.motorista_outro;
-                
-                cargaAtual = cargaData;
-                
-                document.getElementById('dados_carga').style.display = 'block';
-                document.getElementById('form_fechamento').style.display = 'block';
-                
-                if (fechamentoData) {
-                    preencherFechamento(fechamentoData);
-                }
+            fetch(`/cargas/buscar_carga_fechamento/${numeroCarga}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Carga não encontrada');
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    if (response.success) {
+                        const dados = response.data;
+                        cargaAtual = dados.carga;
+                        
+                        // Atualizar display
+                        document.getElementById('display_numero_carga').textContent = dados.carga.numero_carga;
+                        document.getElementById('display_motorista').textContent = dados.carga.motorista || dados.carga.motorista_outro;
+                        document.getElementById('display_data').textContent = new Date().toLocaleDateString();
+                        
+                        // Mostrar dados
+                        document.getElementById('dados_carga').style.display = 'block';
+                        document.getElementById('dados_carga').dataset.cargaId = dados.carga.id;
+                        document.getElementById('form_fechamento').style.display = 'block';
+
+                        // Se já existe fechamento, preencher os dados
+                        if (dados.fechamento) {
+                            document.getElementById('tratativas').value = dados.fechamento.tratativas;
+                            document.getElementById('tipo_fechamento_1').value = dados.fechamento.tipo_fechamento_1;
+                            document.getElementById('quantidade_1').value = dados.fechamento.quantidade_1;
+                            document.getElementById('valor_unitario_1').value = dados.fechamento.valor_unitario_1;
+                            document.getElementById('descontos_1').value = dados.fechamento.descontos_1;
+                            document.getElementById('valor_total_1').value = dados.fechamento.valor_total_1;
+                            document.getElementById('observacoes_1').value = dados.fechamento.observacoes_1;
+
+                            if (dados.fechamento.tratativas === '2') {
+                                document.getElementById('tratativa_2').style.display = 'block';
+                                document.getElementById('tipo_fechamento_2').value = dados.fechamento.tipo_fechamento_2;
+                                document.getElementById('quantidade_2').value = dados.fechamento.quantidade_2;
+                                document.getElementById('valor_unitario_2').value = dados.fechamento.valor_unitario_2;
+                                document.getElementById('descontos_2').value = dados.fechamento.descontos_2;
+                                document.getElementById('valor_total_2').value = dados.fechamento.valor_total_2;
+                                document.getElementById('observacoes_2').value = dados.fechamento.observacoes_2;
+                            }
+                        }
+                        
+                        // Atualizar lista de documentos
+                        if (window.DocumentosModule) {
+                            window.DocumentosModule.listarDocumentos(dados.carga.id);
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso',
+                            text: 'Carga encontrada com sucesso!'
+                        });
+                    } else {
+                        throw new Error(response.message || 'Erro ao buscar carga');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar carga:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: error.message || 'Carga não encontrada'
+                    });
+                });
+        }
+
+        function voltar() {
+            if (cargaAtual) {
+                window.location.href = `/cargas/visualizar_carga/${cargaAtual.id}`;
             } else {
+                window.location.href = '/cargas';
+            }
+        }
+
+        function toggleTratativas() {
+            const tratativas = document.getElementById('tratativas').value;
+            const tratativa2 = document.getElementById('tratativa_2');
+            
+            if (tratativas === '2') {
+                tratativa2.style.display = 'block';
+            } else {
+                tratativa2.style.display = 'none';
+            }
+        }
+
+        function calcularTotal(numero) {
+            const quantidade = parseFloat(document.getElementById(`quantidade_${numero}`).value) || 0;
+            const valorUnitario = parseFloat(document.getElementById(`valor_unitario_${numero}`).value) || 0;
+            const descontos = parseFloat(document.getElementById(`descontos_${numero}`).value) || 0;
+            
+            const total = (quantidade * valorUnitario) - descontos;
+            document.getElementById(`valor_total_${numero}`).value = total.toFixed(2);
+        }
+
+        function coletarDadosFechamento() {
+            const tratativas = parseInt(document.getElementById('tratativas').value);
+            
+            const dados = {
+                numero_carga: cargaAtual.numero_carga,
+                tratativas: tratativas,
+                tipo_fechamento_1: document.getElementById('tipo_fechamento_1').value,
+                quantidade_1: parseFloat(document.getElementById('quantidade_1').value) || 0,
+                valor_unitario_1: parseFloat(document.getElementById('valor_unitario_1').value) || 0,
+                descontos_1: parseFloat(document.getElementById('descontos_1').value) || 0,
+                valor_total_1: parseFloat(document.getElementById('valor_total_1').value) || 0,
+                observacoes_1: document.getElementById('observacoes_1').value || ''
+            };
+            
+            if (tratativas === 2) {
+                dados.tipo_fechamento_2 = document.getElementById('tipo_fechamento_2').value;
+                dados.quantidade_2 = parseFloat(document.getElementById('quantidade_2').value) || 0;
+                dados.valor_unitario_2 = parseFloat(document.getElementById('valor_unitario_2').value) || 0;
+                dados.descontos_2 = parseFloat(document.getElementById('descontos_2').value) || 0;
+                dados.valor_total_2 = parseFloat(document.getElementById('valor_total_2').value) || 0;
+                dados.observacoes_2 = document.getElementById('observacoes_2').value || '';
+            }
+            
+            return dados;
+        }
+
+        function salvarFechamento() {
+            if (!cargaAtual) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro',
-                    text: data.message || 'Carga não encontrada!'
+                    text: 'Por favor, busque uma carga primeiro'
                 });
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: 'Erro ao buscar carga!'
+            
+            const dados = coletarDadosFechamento();
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+            
+            fetch('/cargas/salvar_fechamento', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(dados)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Erro ao salvar fechamento');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso',
+                        text: 'Fechamento salvo com sucesso!',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/cargas';
+                        }
+                    });
+                } else {
+                    throw new Error(data.message || 'Erro ao salvar fechamento');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: error.message || 'Ocorreu um erro ao salvar o fechamento'
+                });
             });
-        });
-}
-
-function preencherFechamento(fechamento) {
-    document.getElementById('tratativas').value = fechamento.tratativas;
-    toggleTratativas();
-    
-    document.getElementById('tipo_fechamento_1').value = fechamento.tipo_fechamento_1;
-    document.getElementById('quantidade_1').value = fechamento.quantidade_1;
-    document.getElementById('valor_unitario_1').value = fechamento.valor_unitario_1;
-    document.getElementById('descontos_1').value = fechamento.descontos_1;
-    document.getElementById('observacoes_1').value = fechamento.observacoes_1;
-    calcularTotal(1);
-    
-    if (fechamento.tratativas === '2') {
-        document.getElementById('tipo_fechamento_2').value = fechamento.tipo_fechamento_2;
-        document.getElementById('quantidade_2').value = fechamento.quantidade_2;
-        document.getElementById('valor_unitario_2').value = fechamento.valor_unitario_2;
-        document.getElementById('descontos_2').value = fechamento.descontos_2;
-        document.getElementById('observacoes_2').value = fechamento.observacoes_2;
-        calcularTotal(2);
-    }
-}
-
-function coletarDadosFechamento() {
-    const tratativas = document.getElementById('tratativas').value;
-    
-    const dados = {
-        numero_carga: cargaAtual.numero_carga,
-        tratativas: tratativas,
-        tipo_fechamento_1: document.getElementById('tipo_fechamento_1').value,
-        quantidade_1: document.getElementById('quantidade_1').value,
-        valor_unitario_1: document.getElementById('valor_unitario_1').value,
-        descontos_1: document.getElementById('descontos_1').value,
-        valor_total_1: document.getElementById('valor_total_1').value,
-        observacoes_1: document.getElementById('observacoes_1').value
-    };
-    
-    if (tratativas === '2') {
-        dados.tipo_fechamento_2 = document.getElementById('tipo_fechamento_2').value;
-        dados.quantidade_2 = document.getElementById('quantidade_2').value;
-        dados.valor_unitario_2 = document.getElementById('valor_unitario_2').value;
-        dados.descontos_2 = document.getElementById('descontos_2').value;
-        dados.valor_total_2 = document.getElementById('valor_total_2').value;
-        dados.observacoes_2 = document.getElementById('observacoes_2').value;
-    }
-    
-    return dados;
-}
-
-function salvarFechamento() {
-    if (!cargaAtual) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Erro',
-            text: 'Por favor, busque uma carga primeiro!'
-        });
-        return;
-    }
-    
-    const dados = coletarDadosFechamento();
-    
-    fetch('/cargas/salvar_fechamento', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dados)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Sucesso',
-                text: 'Fechamento salvo com sucesso!'
-            }).then(() => {
-                window.location.href = '/cargas/todas_cargas';
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: data.message || 'Erro ao salvar fechamento!'
-            });
+            
+            // Atualizar notificações após salvar
+            atualizarNotificacoes();
         }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Erro',
-            text: 'Erro ao salvar fechamento!'
-        });
-    });
-}
+    </script>
+    {% include 'includes/documentos_script.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sem alterações
 </script>
 {% endblock %}

@@ -1,0 +1,56 @@
+{% block status_chart %}
+<div class="card h-100">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-chart-pie"></i>
+            Status das Cargas
+        </h5>
+    </div>
+    <div class="card-body">
+        <canvas id="statusChart" style="height: 300px;"></canvas>
+    </div>
+</div>
+
+<script>
+(function() {
+    const ctx = document.getElementById('statusChart');
+    if (!ctx) return;
+
+    const statusData = {{ stats.stats_status | tojson }};
+    
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendente', 'Em Andamento', 'Concluída', 'Cancelada'],
+            datasets: [{
+                data: [
+                    statusData.pendente,
+                    statusData.em_andamento,
+                    statusData.concluida,
+                    statusData.cancelada
+                ],
+                backgroundColor: [
+                    '#ffc107',  // Amarelo para pendente
+                    '#17a2b8',  // Azul para em andamento
+                    '#28a745',  // Verde para concluída
+                    '#dc3545'   // Vermelho para cancelada
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    window.addEventListener('beforeunload', function() {
+        chart.destroy();
+    });
+})();
+</script>
+{% endblock %}

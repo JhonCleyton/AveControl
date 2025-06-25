@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Custo de Aves{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+        <h1>Custo de Aves</h1>
+        <button class="btn btn-success" id="exportExcel">
+            <i class="fas fa-file-excel"></i> Exportar Excel
+        </button>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="dataInicio" class="form-label">Data Inicial</label>
+                    <input type="date" class="form-control" id="dataInicio">
+                </div>
+                <div class="col-md-3">
+                    <label for="dataFim" class="form-label">Data Final</label>
+                    <input type="date" class="form-control" id="dataFim">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary" id="btnFiltrar">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="custosTable" class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nº Carga</th>
+                            <th>Data Abate</th>
+                            <th>Valor Fechamento</th>
+                            <th>Valor Frete</th>
+                            <th>Custo Carregamento</th>
+                            <th>Comissão</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Editar Custos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cargaId">
+                <div class="mb-3">
+                    <label for="custoCarregamento" class="form-label">Custo de Carregamento</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" class="form-control" id="custoCarregamento" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="comissao" class="form-label">Comissão</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" class="form-control" id="comissao" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.7.0/css/buttons.bootstrap4.min.css">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pt-br.js"></script>
+<script>
+    $(document).ready(function() {
+        moment.locale('pt-br');
+        
+        let table;
+        
+        $.get('/custo-aves/api/test-auth')
+            .done(function(response) {
+                console.log('Usuário autenticado:', response);
+                if (response.tipo !== 'fechamento') {
+                    toastr.error('Acesso não autorizado. Você precisa ser um usuário do tipo fechamento.');
+                    window.location.href = '/';
+                    return;
+                }
+                initializeDataTable();
+            })
+            .fail(function(error) {
+                console.error('Erro ao verificar autenticação:', error);
+                toastr.error('Erro ao verificar autenticação. Por favor, faça login novamente.');
+                window.location.href = '/login';
+            });
+
+        function initializeDataTable() {
+            table = $('#custosTable').DataTable({
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: '/custo-aves/api/custos',
+                    data: function(d) {
+                        d.data_inicio = $('#dataInicio').val();
+                        d.data_fim = $('#dataFim').val();
+                    },
+                    dataSrc: function(json) {
+                        console.log('Dados recebidos:', json);
+                        if (json.error) {
+                            console.error('Erro da API:', json.error);
+                            toastr.error('Erro ao carregar dados: ' + json.error);
+                            return [];
+                        }
+                        return json;
+                    }
+                },
+                columns: [
+                    { data: 'numero_carga' },
+                    { 
+                        data: 'data_abate',
+                        render: function(data) {
+                            if (!data) return '';
+                            return moment(data).format('DD/MM/YYYY');
+                        }
+                    },
+                    { 
+                        data: 'valor_fechamento',
+                        render: function(data) {
+                            return formatMoney(data);
+                        }
+                    },
+                    { 
+                        data: 'valor_frete',
+                        render: function(data) {
+                            return formatMoney(data);
+                        }
+                    },
+                    { 
+                        data: 'custo_carregamento',
+                        render: function(data) {
+                            return formatMoney(data);
+                        }
+                    },
+                    { 
+                        data: 'comissao',
+                        render: function(data) {
+                            return formatMoney(data);
+                        }
+                    },
+                    { 
+                        data: 'valor_total',
+                        render: function(data) {
+                            return formatMoney(data);
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            return `<button class="btn btn-sm btn-primary edit-btn" data-id="${data.id}">
+                                        <i class="fas fa-pencil-alt"></i> Editar
+                                    </button>`;
+                        }
+                    }
+                ],
+                order: [[1, 'desc']], // Ordenar por data de abate decrescente
+                language: {
+                    url: '/static/js/Portuguese-Brasil.json'
+                },
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]]
+            });
+
+            // Evento de clique no botão filtrar
+            $('#btnFiltrar').on('click', function() {
+                table.ajax.reload();
+            });
+
+            // Evento de clique no botão de editar
+            $('#custosTable').on('click', '.edit-btn', function() {
+                var id = $(this).data('id');
+                var data = table.row($(this).parents('tr')).data();
+                
+                $('#cargaId').val(id);
+                $('#custoCarregamento').val(data.custo_carregamento);
+                $('#comissao').val(data.comissao);
+                
+                // Usar o Bootstrap 5 para mostrar o modal
+                var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                editModal.show();
+            });
+
+            // Evento de clique no botão de exportar Excel
+            $('#exportExcel').on('click', function() {
+                const dataInicio = $('#dataInicio').val();
+                const dataFim = $('#dataFim').val();
+                let url = '/custo-aves/api/custos/export/excel';
+                
+                if (dataInicio || dataFim) {
+                    url += '?';
+                    if (dataInicio) url += `data_inicio=${dataInicio}`;
+                    if (dataFim) {
+                        if (dataInicio) url += '&';
+                        url += `data_fim=${dataFim}`;
+                    }
+                }
+                
+                window.location.href = url;
+            });
+
+            // Evento de clique no botão de salvar do modal
+            $('#btnSalvar').on('click', function() {
+                salvarCustos();
+            });
+        }
+
+        function formatMoney(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function salvarCustos() {
+            const data = {
+                custo_carregamento: parseFloat($('#custoCarregamento').val()) || 0,
+                comissao: parseFloat($('#comissao').val()) || 0
+            };
+
+            $.ajax({
+                url: `/custo-aves/api/custos/${$('#cargaId').val()}`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    // Usar o Bootstrap 5 para fechar o modal
+                    var editModal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                    editModal.hide();
+                    
+                    $('#custosTable').DataTable().ajax.reload();
+                    toastr.success('Custos atualizados com sucesso!');
+                },
+                error: function(error) {
+                    console.error('Erro ao salvar:', error);
+                    toastr.error('Erro ao salvar os custos. Por favor, tente novamente.');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

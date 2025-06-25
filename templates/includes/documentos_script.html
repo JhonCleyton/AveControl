@@ -1,0 +1,19 @@
+<!-- Scripts para gerenciamento de documentos -->
+<script src="{{ url_for('static', filename='js/documentos.js') }}"></script>
+<script>
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.DocumentosModule) {
+                window.DocumentosModule.init();
+            } else {
+                console.error('Módulo de documentos não encontrado');
+            }
+        });
+    } else {
+        if (window.DocumentosModule) {
+            window.DocumentosModule.init();
+        } else {
+            console.error('Módulo de documentos não encontrado');
+        }
+    }
+</script>

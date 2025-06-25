@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
-from models import db, Usuario
+from models import db, Usuario, TipoUsuario
 from datetime import datetime, timezone
 from utils import permissao_gerente
 from werkzeug.security import generate_password_hash
@@ -36,7 +36,7 @@ def criar_usuario():
         usuario = Usuario(
             nome=dados['username'],
             email=dados['email'],
-            tipo=dados['tipo'],
+            tipo=TipoUsuario(dados['tipo']).value.lower(),
             ativo=True,
             data_criacao=datetime.now(timezone.utc)
         )
@@ -70,7 +70,7 @@ def editar_usuario(id):
         # Atualizar dados do usuário
         usuario.nome = dados['username']
         usuario.email = dados['email']
-        usuario.tipo = dados['tipo']
+        usuario.tipo = TipoUsuario(dados['tipo']).value.lower()
         usuario.ativo = dados['ativo']
         
         if dados.get('password') and dados['password'].strip():
@@ -97,8 +97,8 @@ def excluir_usuario(id):
         if usuario.nome == 'gerente':
             return jsonify({'success': False, 'message': 'Não é permitido excluir o usuário gerente.'})
         
-        db.session.delete(usuario)
-        db.session.commit()
+        # Usa o método personalizado de exclusão
+        usuario.delete()
         
         return jsonify({'success': True, 'message': 'Usuário excluído com sucesso!'})
     except Exception as e:

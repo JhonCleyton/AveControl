@@ -1,0 +1,59 @@
+# Arquivos do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Ambiente virtual
+venv/
+ENV/
+
+# Banco de dados
+*.db
+*.sqlite3
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de log
+*.log
+
+# Arquivos de upload
+uploads/
+media/
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Arquivos de cache
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/

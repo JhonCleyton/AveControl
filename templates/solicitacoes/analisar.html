@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-clipboard-check"></i> Analisar Solicitação
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Detalhes da Solicitação</h6>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Tipo:</th>
+                            <td>{{ solicitacao.tipo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Setor:</th>
+                            <td>{{ solicitacao.setor }}</td>
+                        </tr>
+                        <tr>
+                            <th>Solicitante:</th>
+                            <td>{{ solicitacao.solicitado_por.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th>Data:</th>
+                            <td>{{ solicitacao.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if solicitacao.status == 'pendente' else 'info' }}">
+                                    {{ solicitacao.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Motivo da Solicitação</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ solicitacao.motivo }}
+                    </div>
+                </div>
+            </div>
+
+            {% if solicitacao.status == 'pendente' %}
+            <div class="row">
+                <div class="col-12">
+                    <h6>Análise</h6>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação:</label>
+                        <textarea class="form-control" id="observacao" rows="3"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" onclick="analisarSolicitacao('aprovada')">
+                            <i class="fas fa-check"></i> Aprovar
+                        </button>
+                        <button class="btn btn-danger" onclick="analisarSolicitacao('reprovada')">
+                            <i class="fas fa-times"></i> Rejeitar
+                        </button>
+                        <a href="{{ url_for('solicitacoes.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="row">
+                <div class="col-md-12">
+                    <h6>Análise</h6>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Analisado por:</th>
+                            <td>{{ solicitacao.analisado_por.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th>Data da análise:</th>
+                            <td>{{ solicitacao.analisado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Observação:</th>
+                            <td>{{ solicitacao.observacao_analise or '-' }}</td>
+                        </tr>
+                    </table>
+                    <div class="mt-3">
+                        <a href="{{ url_for('solicitacoes.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function analisarSolicitacao(status) {
+    const observacao = document.getElementById('observacao').value;
+    
+    fetch('{{ url_for("solicitacoes.analisar_solicitacao", id=solicitacao.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: status,
+            observacao: observacao
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: data.message,
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = '{{ url_for("solicitacoes.index") }}';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: data.message
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: 'Ocorreu um erro ao processar a solicitação.'
+        });
+    });
+}
+</script>
+{% endblock %}

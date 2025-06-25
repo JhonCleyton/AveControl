@@ -107,7 +107,7 @@
         </div>
 
         <div class="text-end">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary" id="btnSalvarProducao">
                 <i class="fas fa-save"></i> Salvar Produção
             </button>
         </div>
@@ -127,291 +127,148 @@ document.addEventListener('DOMContentLoaded', function() {
         buscarCargaProducao();
     }
 
-    // Definindo a função no escopo global
-    window.buscarCargaProducao = function() {
-        const numeroCarga = document.getElementById('numero_carga').value;
-        if (!numeroCarga) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: 'Por favor, digite o número da carga'
-            });
-            return;
-        }
-
-        fetch(`/cargas/producao/buscar/${numeroCarga}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Carga não encontrada');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('carga_id').value = data.carga.id;
-                    
-                    // Preencher os campos se houver dados de produção
-                    if (data.carga.producao) {
-                        const producao = data.carga.producao;
-                        temProducao = true;
-                        
-                        // Salvar dados originais para comparação
-                        dadosOriginais = {
-                            aves_granja: producao.aves_granja,
-                            aves_mortas: producao.aves_mortas,
-                            aves_recebidas: producao.aves_recebidas,
-                            aves_contador: producao.aves_contador,
-                            aves_por_caixa: producao.aves_por_caixa,
-                            mortalidade_excesso: producao.mortalidade_excesso,
-                            aves_molhadas_granja: producao.aves_molhadas_granja,
-                            aves_molhadas_chuva: producao.aves_molhadas_chuva,
-                            quebra_maus_tratos: producao.quebra_maus_tratos,
-                            aves_papo_cheio: producao.aves_papo_cheio,
-                            outras_quebras: producao.outras_quebras,
-                            descricao_quebras: producao.descricao_quebras
-                        };
-                        
-                        // Preencher campos de contagem
-                        document.getElementById('aves_granja').value = producao.aves_granja;
-                        document.getElementById('aves_mortas').value = producao.aves_mortas;
-                        document.getElementById('aves_recebidas').value = producao.aves_recebidas;
-                        document.getElementById('aves_contador').value = producao.aves_contador;
-                        document.getElementById('aves_por_caixa').value = producao.aves_por_caixa;
-                        
-                        // Preencher campos de avarias
-                        document.getElementById('mortalidade_excesso').value = producao.mortalidade_excesso;
-                        document.getElementById('aves_molhadas_granja').value = producao.aves_molhadas_granja;
-                        document.getElementById('aves_molhadas_chuva').value = producao.aves_molhadas_chuva;
-                        document.getElementById('quebra_maus_tratos').value = producao.quebra_maus_tratos;
-                        document.getElementById('aves_papo_cheio').value = producao.aves_papo_cheio;
-                        document.getElementById('outras_quebras').value = producao.outras_quebras;
-                        document.getElementById('descricao_quebras').value = producao.descricao_quebras;
-                        
-                        // Calcular total de avarias
-                        calcularTotalAvarias();
-                    } else {
-                        // Limpar os campos se não houver dados
-                        temProducao = false;
-                        dadosOriginais = null;
-                        document.getElementById('formProducao').reset();
-                        document.getElementById('carga_id').value = data.carga.id;
-                        calcularTotalAvarias();
-                    }
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Carga Encontrada',
-                        text: `Carga ${numeroCarga} encontrada com sucesso!`
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro',
-                        text: data.message || 'Carga não encontrada'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro',
-                    text: 'Erro ao buscar a carga'
-                });
-            });
-    }
-
-    // Função para verificar se houve alterações nos dados
-    function verificarAlteracoes() {
-        if (!temProducao || !dadosOriginais) return false;
-        
-        const campos = [
-            'aves_granja',
-            'aves_mortas',
-            'aves_recebidas',
-            'aves_contador',
-            'aves_por_caixa',
-            'mortalidade_excesso',
-            'aves_molhadas_granja',
-            'aves_molhadas_chuva',
-            'quebra_maus_tratos',
-            'aves_papo_cheio',
-            'outras_quebras',
-            'descricao_quebras'
-        ];
-
-        for (const campo of campos) {
-            const valorAtual = document.getElementById(campo).value;
-            const valorOriginal = dadosOriginais[campo];
-            
-            // Converter para o mesmo tipo antes de comparar
-            if (campo === 'descricao_quebras') {
-                if (valorAtual !== valorOriginal) return true;
-            } else {
-                if (parseFloat(valorAtual) !== parseFloat(valorOriginal)) return true;
-            }
-        }
-        
-        return false;
-    }
-
-    // Função para verificar se tem solicitação aprovada
-    function verificarSolicitacaoAprovada(cargaId) {
-        return fetch(`/cargas/verificar_solicitacao/${cargaId}?setor=producao`)
-            .then(response => response.json())
-            .then(data => {
-                return data.aprovada;
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                return false;
-            });
-    }
-
-    // Função para calcular o total de avarias
-    function calcularTotalAvarias() {
-        const campos = [
-            'mortalidade_excesso',
-            'aves_molhadas_granja',
-            'aves_molhadas_chuva',
-            'quebra_maus_tratos',
-            'aves_papo_cheio',
-            'outras_quebras'
-        ];
-
-        let total = 0;
-        campos.forEach(campo => {
-            const valor = parseFloat(document.getElementById(campo).value) || 0;
-            total += valor;
-        });
-
-        document.getElementById('total_avarias').value = total.toFixed(2);
-    }
-
     // Adicionar evento de input para todos os campos de avaria
     document.querySelectorAll('.avaria-input').forEach(input => {
         input.addEventListener('input', calcularTotalAvarias);
     });
 
-    // Calcular total inicial
-    calcularTotalAvarias();
-
-    // Formulário submit
-    document.getElementById('formProducao').addEventListener('submit', async function(e) {
+    // Botão de salvar produção
+    document.getElementById('btnSalvarProducao').addEventListener('click', async function(e) {
         e.preventDefault();
-
-        // Se tem produção e houve alterações, verificar se pode editar
-        if (temProducao && verificarAlteracoes()) {
-            const cargaId = document.getElementById('carga_id').value;
-            
-            // Verificar se tem solicitação aprovada
-            const temAprovacao = await verificarSolicitacaoAprovada(cargaId);
-            
-            if (!temAprovacao) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Atenção',
-                    text: 'Esta produção já existe. Você precisa solicitar autorização ao gerente para fazer alterações.',
-                    showCancelButton: true,
-                    confirmButtonText: 'Solicitar Edição',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Enviar solicitação de edição
-                        const data = {
-                            setor: 'producao',
-                            motivo: 'Solicitação de edição dos dados de produção'
-                        };
-                        
-                        fetch(`/cargas/solicitar_edicao/${cargaId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': getCsrfToken()
-                            },
-                            body: JSON.stringify(data)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Solicitação Enviada',
-                                    text: 'Sua solicitação de edição foi enviada ao gerente. Aguarde a aprovação.',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    // Redirecionar para a visualização da carga
-                                    window.location.href = `/cargas/visualizar/${cargaId}`;
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Erro',
-                                    text: data.message || 'Erro ao enviar solicitação'
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Erro:', error);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Erro',
-                                text: 'Erro ao enviar solicitação'
-                            });
-                        });
-                    }
-                });
-                return;
-            }
-        }
-
-        // Se não tem produção, não houve alterações, ou tem aprovação, salvar normalmente
-        const formData = new FormData(this);
+        console.log('Botão salvar clicado');
+        
+        const form = document.getElementById('formProducao');
+        const formData = new FormData(form);
         const data = {};
         formData.forEach((value, key) => {
             data[key] = value;
         });
+        console.log('Dados do formulário:', data);
 
-        fetch('/cargas/producao/salvar', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        // Verificar se tem carga_id
+        if (!data.carga_id) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Por favor, busque uma carga primeiro'
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch('/cargas/producao/salvar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(data)
+            });
+
+            const responseData = await response.json();
+            if (responseData.success) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Sucesso',
                     text: 'Dados de produção salvos com sucesso!'
                 }).then(() => {
-                    // Recarregar os dados após salvar
                     buscarCargaProducao();
                 });
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erro',
-                    text: data.message || 'Erro ao salvar dados de produção'
-                });
+                throw new Error(responseData.message || 'Erro ao salvar dados de produção');
             }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
+        } catch (error) {
+            console.error('Erro ao salvar:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
-                text: 'Erro ao salvar dados de produção'
+                text: error.message || 'Erro ao salvar dados de produção'
             });
-        });
+        }
     });
 });
 
-function getCsrfToken() {
-    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+// Função para buscar carga
+window.buscarCargaProducao = async function() {
+    const numeroCarga = document.getElementById('numero_carga').value;
+    if (!numeroCarga) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: 'Por favor, digite o número da carga'
+        });
+        return;
+    }
+
+    try {
+        const response = await fetch(`/cargas/producao/buscar/${numeroCarga}`);
+        if (!response.ok) {
+            throw new Error('Carga não encontrada');
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('carga_id').value = data.carga.id;
+            
+            if (data.carga.producao) {
+                const producao = data.carga.producao;
+                temProducao = true;
+                
+                // Preencher campos
+                Object.keys(producao).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = producao[key];
+                    }
+                });
+                
+                calcularTotalAvarias();
+            } else {
+                temProducao = false;
+                dadosOriginais = null;
+                
+                // Limpar campos
+                document.querySelectorAll('input[type="number"], textarea').forEach(input => {
+                    input.value = '';
+                });
+            }
+        } else {
+            throw new Error(data.message || 'Erro ao buscar carga');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: error.message || 'Erro ao buscar carga'
+        });
+    }
+};
+
+// Função para calcular total de avarias
+function calcularTotalAvarias() {
+    const campos = [
+        'mortalidade_excesso',
+        'aves_molhadas_granja',
+        'aves_molhadas_chuva',
+        'quebra_maus_tratos',
+        'aves_papo_cheio',
+        'outras_quebras'
+    ];
+    
+    const total = campos.reduce((acc, campo) => {
+        const valor = parseFloat(document.getElementById(campo).value) || 0;
+        return acc + valor;
+    }, 0);
+    
+    document.getElementById('total_avarias').value = total.toFixed(2);
 }
 </script>
+
+{% include 'includes/modal_documento.html' %}
+
+{% block scripts %}
+    {{ super() }}
+    {% include 'includes/documentos_script.html' %}
+{% endblock %}
 {% endblock %}
